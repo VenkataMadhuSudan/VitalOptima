@@ -1,0 +1,148 @@
+date,shift,department,staff_role,available_count,required_count,maximum_permitted_working_hours,minimum_rest_hours_between_shifts
+2026-01-01,Morning,General Ward,General Ward Nurse,34,34,40,11
+2026-01-01,Morning,ICU,ICU Nurse,12,12,40,11
+2026-01-01,Morning,General Ward,Doctor,6,6,48,11
+2026-01-01,Morning,ICU,Doctor,3,3,48,11
+2026-01-01,Morning,Emergency Department,Doctor,6,5,48,11
+2026-01-01,Morning,Emergency Department,Emergency Department Staff,14,14,40,11
+2026-01-01,Morning,Operating Room,Operating Room Staff,29,30,40,11
+2026-01-01,Evening,General Ward,General Ward Nurse,30,30,40,11
+2026-01-01,Evening,ICU,ICU Nurse,13,12,40,11
+2026-01-01,Evening,General Ward,Doctor,4,4,48,11
+2026-01-01,Evening,ICU,Doctor,3,3,48,11
+2026-01-01,Evening,Emergency Department,Doctor,5,5,48,11
+2026-01-01,Evening,Emergency Department,Emergency Department Staff,14,14,40,11
+2026-01-01,Evening,Operating Room,Operating Room Staff,9,9,40,11
+2026-01-01,Night,General Ward,General Ward Nurse,20,20,40,11
+2026-01-01,Night,ICU,ICU Nurse,12,12,40,11
+2026-01-01,Night,General Ward,Doctor,2,2,48,11
+2026-01-01,Night,ICU,Doctor,2,2,48,11
+2026-01-01,Night,Emergency Department,Doctor,3,3,48,11
+2026-01-01,Night,Emergency Department,Emergency Department Staff,10,10,40,11
+2026-01-01,Night,Operating Room,Operating Room Staff,6,6,40,11
+2026-01-02,Morning,General Ward,General Ward Nurse,36,34,40,11
+2026-01-02,Morning,ICU,ICU Nurse,13,12,40,11
+2026-01-02,Morning,General Ward,Doctor,6,6,48,11
+2026-01-02,Morning,ICU,Doctor,3,3,48,11
+2026-01-02,Morning,Emergency Department,Doctor,5,5,48,11
+2026-01-02,Morning,Emergency Department,Emergency Department Staff,14,14,40,11
+2026-01-02,Morning,Operating Room,Operating Room Staff,30,30,40,11
+2026-01-02,Evening,General Ward,General Ward Nurse,30,30,40,11
+2026-01-02,Evening,ICU,ICU Nurse,12,12,40,11
+2026-01-02,Evening,General Ward,Doctor,4,4,48,11
+2026-01-02,Evening,ICU,Doctor,3,3,48,11
+2026-01-02,Evening,Emergency Department,Doctor,5,5,48,11
+2026-01-02,Evening,Emergency Department,Emergency Department Staff,14,14,40,11
+2026-01-02,Evening,Operating Room,Operating Room Staff,9,9,40,11
+2026-01-02,Night,General Ward,General Ward Nurse,22,20,40,11
+2026-01-02,Night,ICU,ICU Nurse,13,12,40,11
+2026-01-02,Night,General Ward,Doctor,2,2,48,11
+2026-01-02,Night,ICU,Doctor,2,2,48,11
+2026-01-02,Night,Emergency Department,Doctor,3,3,48,11
+2026-01-02,Night,Emergency Department,Emergency Department Staff,11,10,40,11
+2026-01-02,Night,Operating Room,Operating Room Staff,5,6,40,11
+2026-01-03,Morning,General Ward,General Ward Nurse,36,34,40,11
+2026-01-03,Morning,ICU,ICU Nurse,12,12,40,11
+2026-01-03,Morning,General Ward,Doctor,6,6,48,11
+2026-01-03,Morning,ICU,Doctor,3,3,48,11
+2026-01-03,Morning,Emergency Department,Doctor,5,5,48,11
+2026-01-03,Morning,Emergency Department,Emergency Department Staff,13,14,40,11
+2026-01-03,Morning,Operating Room,Operating Room Staff,10,10,40,11
+2026-01-03,Evening,General Ward,General Ward Nurse,31,30,40,11
+2026-01-03,Evening,ICU,ICU Nurse,12,12,40,11
+2026-01-03,Evening,General Ward,Doctor,4,4,48,11
+2026-01-03,Evening,ICU,Doctor,3,3,48,11
+2026-01-03,Evening,Emergency Department,Doctor,5,5,48,11
+2026-01-03,Evening,Emergency Department,Emergency Department Staff,16,14,40,11
+2026-01-03,Evening,Operating Room,Operating Room Staff,3,3,40,11
+2026-01-03,Night,General Ward,General Ward Nurse,22,20,40,11
+2026-01-03,Night,ICU,ICU Nurse,7,12,40,11
+2026-01-03,Night,General Ward,Doctor,2,2,48,11
+2026-01-03,Night,ICU,Doctor,2,2,48,11
+2026-01-03,Night,Emergency Department,Doctor,3,3,48,11
+2026-01-03,Night,Emergency Department,Emergency Department Staff,10,10,40,11
+2026-01-03,Night,Operating Room,Operating Room Staff,6,6,40,11
+2026-01-04,Morning,General Ward,General Ward Nurse,33,34,40,11
+2026-01-04,Morning,ICU,ICU Nurse,12,12,40,11
+2026-01-04,Morning,General Ward,Doctor,6,6,48,11
+2026-01-04,Morning,ICU,Doctor,3,3,48,11
+2026-01-04,Morning,Emergency Department,Doctor,5,5,48,11
+2026-01-04,Morning,Emergency Department,Emergency Department Staff,14,14,40,11
+2026-01-04,Morning,Operating Room,Operating Room Staff,10,10,40,11
+2026-01-04,Evening,General Ward,General Ward Nurse,33,30,40,11
+2026-01-04,Evening,ICU,ICU Nurse,12,12,40,11
+2026-01-04,Evening,General Ward,Doctor,4,4,48,11
+2026-01-04,Evening,ICU,Doctor,3,3,48,11
+2026-01-04,Evening,Emergency Department,Doctor,5,5,48,11
+2026-01-04,Evening,Emergency Department,Emergency Department Staff,10,14,40,11
+2026-01-04,Evening,Operating Room,Operating Room Staff,3,3,40,11
+2026-01-04,Night,General Ward,General Ward Nurse,19,20,40,11
+2026-01-04,Night,ICU,ICU Nurse,13,12,40,11
+2026-01-04,Night,General Ward,Doctor,2,2,48,11
+2026-01-04,Night,ICU,Doctor,2,2,48,11
+2026-01-04,Night,Emergency Department,Doctor,3,3,48,11
+2026-01-04,Night,Emergency Department,Emergency Department Staff,10,10,40,11
+2026-01-04,Night,Operating Room,Operating Room Staff,6,6,40,11
+2026-01-05,Morning,General Ward,General Ward Nurse,28,34,40,11
+2026-01-05,Morning,ICU,ICU Nurse,13,12,40,11
+2026-01-05,Morning,General Ward,Doctor,6,6,48,11
+2026-01-05,Morning,ICU,Doctor,3,3,48,11
+2026-01-05,Morning,Emergency Department,Doctor,5,5,48,11
+2026-01-05,Morning,Emergency Department,Emergency Department Staff,14,14,40,11
+2026-01-05,Morning,Operating Room,Operating Room Staff,31,30,40,11
+2026-01-05,Evening,General Ward,General Ward Nurse,30,30,40,11
+2026-01-05,Evening,ICU,ICU Nurse,12,12,40,11
+2026-01-05,Evening,General Ward,Doctor,4,4,48,11
+2026-01-05,Evening,ICU,Doctor,3,3,48,11
+2026-01-05,Evening,Emergency Department,Doctor,5,5,48,11
+2026-01-05,Evening,Emergency Department,Emergency Department Staff,14,14,40,11
+2026-01-05,Evening,Operating Room,Operating Room Staff,10,9,40,11
+2026-01-05,Night,General Ward,General Ward Nurse,21,20,40,11
+2026-01-05,Night,ICU,ICU Nurse,13,12,40,11
+2026-01-05,Night,General Ward,Doctor,2,2,48,11
+2026-01-05,Night,ICU,Doctor,2,2,48,11
+2026-01-05,Night,Emergency Department,Doctor,3,3,48,11
+2026-01-05,Night,Emergency Department,Emergency Department Staff,10,10,40,11
+2026-01-05,Night,Operating Room,Operating Room Staff,6,6,40,11
+2026-01-06,Morning,General Ward,General Ward Nurse,33,34,40,11
+2026-01-06,Morning,ICU,ICU Nurse,12,12,40,11
+2026-01-06,Morning,General Ward,Doctor,6,6,48,11
+2026-01-06,Morning,ICU,Doctor,3,3,48,11
+2026-01-06,Morning,Emergency Department,Doctor,5,5,48,11
+2026-01-06,Morning,Emergency Department,Emergency Department Staff,15,14,40,11
+2026-01-06,Morning,Operating Room,Operating Room Staff,24,30,40,11
+2026-01-06,Evening,General Ward,General Ward Nurse,29,30,40,11
+2026-01-06,Evening,ICU,ICU Nurse,12,12,40,11
+2026-01-06,Evening,General Ward,Doctor,4,4,48,11
+2026-01-06,Evening,ICU,Doctor,3,3,48,11
+2026-01-06,Evening,Emergency Department,Doctor,5,5,48,11
+2026-01-06,Evening,Emergency Department,Emergency Department Staff,15,14,40,11
+2026-01-06,Evening,Operating Room,Operating Room Staff,9,9,40,11
+2026-01-06,Night,General Ward,General Ward Nurse,19,20,40,11
+2026-01-06,Night,ICU,ICU Nurse,11,12,40,11
+2026-01-06,Night,General Ward,Doctor,2,2,48,11
+2026-01-06,Night,ICU,Doctor,1,2,48,11
+2026-01-06,Night,Emergency Department,Doctor,3,3,48,11
+2026-01-06,Night,Emergency Department,Emergency Department Staff,10,10,40,11
+2026-01-06,Night,Operating Room,Operating Room Staff,6,6,40,11
+2026-01-07,Morning,General Ward,General Ward Nurse,32,34,40,11
+2026-01-07,Morning,ICU,ICU Nurse,12,12,40,11
+2026-01-07,Morning,General Ward,Doctor,6,6,48,11
+2026-01-07,Morning,ICU,Doctor,3,3,48,11
+2026-01-07,Morning,Emergency Department,Doctor,5,5,48,11
+2026-01-07,Morning,Emergency Department,Emergency Department Staff,15,14,40,11
+2026-01-07,Morning,Operating Room,Operating Room Staff,30,30,40,11
+2026-01-07,Evening,General Ward,General Ward Nurse,31,30,40,11
+2026-01-07,Evening,ICU,ICU Nurse,13,12,40,11
+2026-01-07,Evening,General Ward,Doctor,4,4,48,11
+2026-01-07,Evening,ICU,Doctor,3,3,48,11
+2026-01-07,Evening,Emergency Department,Doctor,5,5,48,11
+2026-01-07,Evening,Emergency Department,Emergency Department Staff,14,14,40,11
+2026-01-07,Evening,Operating Room,Operating Room Staff,9,9,40,11
+2026-01-07,Night,General Ward,General Ward Nurse,21,20,40,11
+2026-01-07,Night,ICU,ICU Nurse,12,12,40,11
+2026-01-07,Night,General Ward,Doctor,2,2,48,11
+2026-01-07,Night,ICU,Doctor,2,2,48,11
+2026-01-07,Night,Emergency Department,Doctor,3,3,48,11
+2026-01-07,Night,Emergency Department,Emergency Department Staff,10,10,40,11
+2026-01-07,Night,Operating Room,Operating Room Staff,6,6,40,11
