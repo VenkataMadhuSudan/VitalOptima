@@ -1,6 +1,6 @@
 """
 VitalOptima — AI-Based Hospital Resource Optimization and Decision-Support System
-Main Application Entrypoint and Navigation Router
+Main Application Entrypoint and Navigation Router (Dual Engine: Neon PostgreSQL + SQLite)
 """
 import streamlit as st
 import sys
@@ -18,6 +18,7 @@ from ui.views.demand_forecast import show_demand_forecast
 from ui.views.optimization import show_optimization
 from ui.views.simulator import show_simulator
 from ui.views.decision_log import show_decision_log
+from ui.views.postgres_explorer import show_historical_data_view
 
 # Page configuration
 st.set_page_config(
@@ -64,7 +65,8 @@ with st.sidebar:
         "Optimization",
         "What-if Simulator",
         "Decision Log",
-        "Inventory Forecasting"
+        "Inventory Forecasting",
+        "Historical Data & Records"
     ]
 
     icons = {
@@ -74,7 +76,8 @@ with st.sidebar:
         "Optimization": "⚙️",
         "What-if Simulator": "🎛️",
         "Decision Log": "📋",
-        "Inventory Forecasting": "📦"
+        "Inventory Forecasting": "📦",
+        "Historical Data & Records": "🗄️"
     }
 
     current_idx = 0
@@ -115,9 +118,12 @@ elif active_view == "What-if Simulator":
     show_simulator()
 elif active_view == "Decision Log":
     show_decision_log()
+elif active_view in ["Historical Data & Records", "PostgreSQL Explorer"]:
+    show_historical_data_view()
 elif active_view == "Inventory Forecasting":
     from ui.components import render_top_nav, render_footer
     from config import HOSPITAL_NAME, SYSTEM_TIMESTAMP, ADMIN_INITIALS, ADMIN_USER, DATA_DIR
+    from db.postgres import load_inventory_supplies_dataset
     import pandas as pd
     render_top_nav(HOSPITAL_NAME, SYSTEM_TIMESTAMP, ADMIN_INITIALS, ADMIN_USER)
     
@@ -128,9 +134,13 @@ elif active_view == "Inventory Forecasting":
     </div>
     """, unsafe_allow_html=True)
 
-    inv_path = DATA_DIR / "inventory_supplies.csv"
-    if inv_path.exists():
-        raw_inv = pd.read_csv(inv_path)
+    raw_inv = load_inventory_supplies_dataset()
+    if raw_inv.empty:
+        inv_path = DATA_DIR / "inventory_supplies.csv"
+        if inv_path.exists():
+            raw_inv = pd.read_csv(inv_path)
+
+    if not raw_inv.empty:
         # Get latest day for each item
         latest_date = raw_inv["date"].max()
         latest_inv = raw_inv[raw_inv["date"] == latest_date].copy()

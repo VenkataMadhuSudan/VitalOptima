@@ -1,4 +1,50 @@
-.venv/
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+
+# Environments & Virtual Envs
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Environment variables & secrets (Never commit secrets)
 .env
+.env*.local
+*.env
+!.env.example
+
+# Streamlit secrets & runtime cache
+.streamlit/secrets.toml
+
+# Operating System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDEs & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing & Type checking caches
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Python packaging & distribution
+dist/
+build/
+*.egg-info/
