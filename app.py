@@ -122,10 +122,10 @@ elif active_view in ["Historical Data & Records", "PostgreSQL Explorer"]:
     show_historical_data_view()
 elif active_view == "Inventory Forecasting":
     from ui.components import render_top_nav, render_footer
-    from config import HOSPITAL_NAME, SYSTEM_TIMESTAMP, ADMIN_INITIALS, ADMIN_USER, DATA_DIR
+    from config import HOSPITAL_NAME, ADMIN_INITIALS, ADMIN_USER, DATA_DIR, get_system_timestamp
     from db.postgres import load_inventory_supplies_dataset
     import pandas as pd
-    render_top_nav(HOSPITAL_NAME, SYSTEM_TIMESTAMP, ADMIN_INITIALS, ADMIN_USER)
+    render_top_nav(HOSPITAL_NAME, get_system_timestamp(), ADMIN_INITIALS, ADMIN_USER)
     
     st.markdown("""
     <div style="margin-bottom: 1.5rem;">
@@ -141,12 +141,14 @@ elif active_view == "Inventory Forecasting":
             raw_inv = pd.read_csv(inv_path)
 
     if not raw_inv.empty:
-        # Get latest day for each item
+        # Normalize date column to datetime for robust comparison across PostgreSQL & CSV
+        raw_inv["date"] = pd.to_datetime(raw_inv["date"])
         latest_date = raw_inv["date"].max()
         latest_inv = raw_inv[raw_inv["date"] == latest_date].copy()
         
-        # Calculate 7-day average consumption
-        recent_inv = raw_inv[raw_inv["date"] >= "2025-12-25"]
+        # Calculate 7-day average consumption leading to latest date
+        seven_days_ago = latest_date - pd.Timedelta(days=7)
+        recent_inv = raw_inv[raw_inv["date"] >= seven_days_ago]
         avg_burn = recent_inv.groupby("item_id")["daily_consumption"].mean().round(1)
         
         summary_rows = []

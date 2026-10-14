@@ -6,7 +6,8 @@ import os
 import sys
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+IST_TZ = timezone(timedelta(hours=5, minutes=30), name="IST")
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text, inspect
@@ -291,7 +292,7 @@ def log_decision_pg(category, recommendation, decision, modified_details="", adm
     engine = get_engine()
     if engine is None:
         return False
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now_str = datetime.now(IST_TZ).strftime("%Y-%m-%d %H:%M")
     try:
         with engine.begin() as conn:
             conn.execute(text("""
@@ -316,7 +317,7 @@ def save_scenario_pg(name: str, surge_pct: float, icu_reduction: int, staff_loss
     engine = get_engine()
     if engine is None:
         return False
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now_str = datetime.now(IST_TZ).strftime("%Y-%m-%d %H:%M")
     try:
         with engine.begin() as conn:
             conn.execute(text("""

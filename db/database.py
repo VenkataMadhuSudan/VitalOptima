@@ -14,7 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import DB_PATH
+from config import DB_PATH, get_ist_now
 
 # Try importing PostgreSQL engine
 try:
@@ -118,7 +118,7 @@ def init_db():
 
 def log_decision(category, recommendation, decision, modified_details="", administrator="Admin (AD)", rationale=""):
     """Logs an administrator decision into Neon PostgreSQL, with fallback to SQLite."""
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now_str = get_ist_now().strftime("%Y-%m-%d %H:%M")
     
     # Try PostgreSQL first
     pg_success = False
@@ -200,7 +200,7 @@ def get_recent_activities():
 
 def save_scenario(name, surge_pct, icu_reduction, staff_loss, results_json=""):
     """Saves a simulation scenario into PostgreSQL with SQLite fallback."""
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now_str = get_ist_now().strftime("%Y-%m-%d %H:%M")
     
     # Try PostgreSQL first
     if POSTGRES_AVAILABLE:
