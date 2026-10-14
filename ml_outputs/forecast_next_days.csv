@@ -1,0 +1,8 @@
+date,forecast_admissions,forecast_emergency_arrivals,forecast_discharges,forecast_icu_admissions,projected_total_occupied,projected_occupancy_pct,capacity_risk
+2026-01-01,51.2,177.7,50.4,4.8,261.8,79.3,False
+2026-01-02,51.0,180.4,61.4,5.0,251.4,76.2,False
+2026-01-03,37.5,176.9,39.9,4.0,249.0,75.5,False
+2026-01-04,34.9,170.8,33.8,3.4,250.1,75.8,False
+2026-01-05,56.3,183.7,48.6,5.6,257.8,78.1,False
+2026-01-06,51.3,181.7,49.5,4.5,259.6,78.7,False
+2026-01-07,51.4,177.4,49.4,4.6,261.6,79.3,False

@@ -1,0 +1,13 @@
+target,model,MAE,RMSE,WAPE_pct
+next_day_admissions,persistence (y[t]),10.653,13.04,21.341
+next_day_admissions,seasonal naive (same weekday last week),7.903,10.876,15.832
+next_day_admissions,ridge regression,6.112,7.687,12.245
+next_day_admissions,random forest,5.779,7.703,11.577
+next_day_emergency_arrivals,persistence (y[t]),21.444,26.596,11.68
+next_day_emergency_arrivals,seasonal naive (same weekday last week),24.0,35.186,13.072
+next_day_emergency_arrivals,ridge regression,17.036,22.348,9.279
+next_day_emergency_arrivals,random forest,16.765,22.021,9.131
+next_day_icu_admissions,persistence (y[t]),2.292,2.761,46.875
+next_day_icu_admissions,seasonal naive (same weekday last week),2.264,2.781,46.307
+next_day_icu_admissions,ridge regression,1.663,2.008,34.013
+next_day_icu_admissions,random forest,1.672,1.961,34.208
