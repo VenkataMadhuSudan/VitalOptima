@@ -927,3 +927,36 @@ def render_footer():
 
 
 from ui.ai_summary_panel import render_floating_ai_assistant
+
+
+def render_metric_card(title: str, value: str, subtext: str, card_type: str = "default", icon: str = "") -> None:
+    """
+    Renders an executive metric card with custom styling and accent badges.
+    """
+    border_color = "#E2E8F0"
+    badge_bg = "#F8FAFC"
+    badge_fg = "#475569"
+    if card_type == "alert":
+        border_color = "#FECACA"
+        badge_bg = "#FEF2F2"
+        badge_fg = "#EF4444"
+    elif card_type == "warning":
+        border_color = "#FED7AA"
+        badge_bg = "#FFF7ED"
+        badge_fg = "#F97316"
+    elif card_type == "success":
+        border_color = "#A7F3D0"
+        badge_bg = "#ECFDF5"
+        badge_fg = "#10B981"
+
+    st.markdown(f"""
+    <div style="background: #FFFFFF; border: 1px solid {border_color}; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <span style="font-size: 0.78rem; font-weight: 600; color: #64748B;">{title}</span>
+            <span style="font-size: 1.1rem;">{icon}</span>
+        </div>
+        <div style="font-size: 1.35rem; font-weight: 800; color: #0F172A; margin-bottom: 0.25rem;">{value}</div>
+        <div style="font-size: 0.75rem; color: #64748B;">{subtext}</div>
+    </div>
+    """, unsafe_allow_html=True)
+

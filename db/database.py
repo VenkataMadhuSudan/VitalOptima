@@ -86,6 +86,58 @@ def init_db():
     )
     """)
 
+    # Seed operational tables from CSVs if not present
+    import pandas as pd
+    data_dir = PROJECT_ROOT / "data"
+    table_csv_map = {
+        "hospital_census_daily": ["hospital_census_daily.csv", "hospital_daily_data.csv"],
+        "hospital_daily_data": ["hospital_daily_data.csv", "hospital_census_daily.csv"],
+        "department_resources": ["department_resources.csv", "hospital_resources.csv"],
+        "hospital_resources": ["hospital_resources.csv", "department_resources.csv"],
+        "staffing_roster": ["staffing_roster.csv", "staff_availability.csv"],
+        "staff_availability": ["staff_availability.csv", "staffing_roster.csv"],
+        "inventory_supplies": ["inventory_supplies.csv", "medical_inventory.csv"],
+        "medical_inventory": ["medical_inventory.csv", "inventory_supplies.csv"],
+        "demand_forecast_hourly": ["demand_forecast.csv"],
+        "demand_forecast": ["demand_forecast.csv"],
+        "departments": ["departments.csv"],
+    }
+
+    for tbl, fnames in table_csv_map.items():
+        cursor.execute(f"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='{tbl}'")
+        if cursor.fetchone()[0] == 0:
+            for fname in fnames:
+                csv_p = data_dir / fname
+                if csv_p.exists():
+                    try:
+                        df = pd.read_csv(csv_p)
+                        df.to_sql(tbl, conn, if_exists="replace", index=False)
+                        break
+                    except Exception:
+                        pass
+
+    # Ensure system_alerts exists
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS system_alerts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        severity TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        acknowledged INTEGER DEFAULT 0
+    )
+    """)
+    cursor.execute("SELECT COUNT(*) FROM system_alerts")
+    if cursor.fetchone()[0] == 0:
+        cursor.executemany(
+            "INSERT INTO system_alerts (title, category, severity, timestamp, acknowledged) VALUES (?, ?, ?, ?, ?)",
+            [
+                ("Emergency Department surge expected at 15:00 (+28% arrivals)", "Surge", "High", "2025-04-27 14:15", 0),
+                ("ICU Bed Availability below 15% safety threshold", "Active", "High", "2025-04-27 13:45", 0),
+                ("N95 Respirator consumable stockout alert", "Shortage", "Medium", "2025-04-27 12:00", 1)
+            ]
+        )
+
     cursor.execute("SELECT COUNT(*) FROM recent_activity")
     if cursor.fetchone()[0] == 0:
         initial_activities = [

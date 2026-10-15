@@ -1121,6 +1121,186 @@ def get_custom_css(theme="Light Mode"):
         overflow-y: auto !important;
         padding: 0.95rem 1rem !important;
     }
+
+    /* =========================================================================
+       Dashboard Component Panels & Interactive Action Cards
+       ========================================================================= */
+    div[class*="st-key-panel_active_alerts"] > div,
+    div[class*="st-key-panel_ai_recommendation"] > div,
+    div[class*="st-key-panel_whatif_simulator"] > div {
+        background: #FFFFFF !important;
+        border-radius: 12px !important;
+        padding: 0.75rem 0.95rem !important;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+        gap: 0.3rem !important;
+    }
+
+    div[class*="st-key-panel_active_alerts"],
+    div[class*="st-key-panel_ai_recommendation"],
+    div[class*="st-key-panel_whatif_simulator"] {
+        margin-bottom: 0.55rem !important;
+    }
+
+    div[class*="st-key-btn_view_all_alerts_link"] button,
+    div[data-testid*="btn_view_all_alerts_link"] button,
+    div[class*="st-key-btn_view_rec_details_link"] button,
+    div[data-testid*="btn_view_rec_details_link"] button,
+    div[class*="st-key-btn_run_sim_trigger_link"] button,
+    div[data-testid*="btn_run_sim_trigger_link"] button {
+        background: transparent !important;
+        border: none !important;
+        color: #2563EB !important;
+        font-size: 0.74rem !important;
+        font-weight: 600 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        height: auto !important;
+        min-height: auto !important;
+        text-align: right !important;
+        float: right !important;
+        white-space: nowrap !important;
+    }
+
+    div[class*="st-key-btn_view_all_alerts_link"] button:hover,
+    div[data-testid*="btn_view_all_alerts_link"] button:hover,
+    div[class*="st-key-btn_view_rec_details_link"] button:hover,
+    div[data-testid*="btn_view_rec_details_link"] button:hover,
+    div[class*="st-key-btn_run_sim_trigger_link"] button:hover,
+    div[data-testid*="btn_run_sim_trigger_link"] button:hover {
+        color: #1D4ED8 !important;
+        text-decoration: underline !important;
+        background: transparent !important;
+    }
+
+    div[class*="st-key-btn_rec_act_"] button,
+    div[data-testid*="btn_rec_act_"] button {
+        padding: 0.2rem 2px !important;
+        min-height: 28px !important;
+        height: 28px !important;
+        border-radius: 6px !important;
+        width: 100% !important;
+    }
+
+    div[class*="st-key-btn_rec_act_"] button div,
+    div[data-testid*="btn_rec_act_"] button div,
+    div[class*="st-key-btn_rec_act_"] button p,
+    div[data-testid*="btn_rec_act_"] button p {
+        font-size: 0.65rem !important;
+        font-weight: 600 !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        letter-spacing: -0.2px !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+
+    div[class*="st-key-btn_rec_act_ack"] button,
+    div[data-testid*="btn_rec_act_ack"] button {
+        border: 1px solid #CBD5E1 !important;
+        background: #FFFFFF !important;
+    }
+    div[class*="st-key-btn_rec_act_ack"] button p,
+    div[data-testid*="btn_rec_act_ack"] button p {
+        color: #334155 !important;
+    }
+    div[class*="st-key-btn_rec_act_ack"] button:hover,
+    div[data-testid*="btn_rec_act_ack"] button:hover {
+        border-color: #94A3B8 !important;
+        background: #F1F5F9 !important;
+    }
+
+    div[class*="st-key-btn_rec_act_assign"] button,
+    div[data-testid*="btn_rec_act_assign"] button {
+        border: 1px solid #93C5FD !important;
+        background: #EFF6FF !important;
+    }
+    div[class*="st-key-btn_rec_act_assign"] button p,
+    div[data-testid*="btn_rec_act_assign"] button p {
+        color: #1D4ED8 !important;
+    }
+    div[class*="st-key-btn_rec_act_assign"] button:hover,
+    div[data-testid*="btn_rec_act_assign"] button:hover {
+        border-color: #3B82F6 !important;
+        background: #DBEAFE !important;
+    }
+
+    div[class*="st-key-btn_rec_act_approve"] button,
+    div[data-testid*="btn_rec_act_approve"] button {
+        border: none !important;
+        background: #10B981 !important;
+    }
+    div[class*="st-key-btn_rec_act_approve"] button p,
+    div[data-testid*="btn_rec_act_approve"] button p {
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+    }
+    div[class*="st-key-btn_rec_act_approve"] button:hover,
+    div[data-testid*="btn_rec_act_approve"] button:hover {
+        background: #059669 !important;
+    }
+
+    div[class*="st-key-btn_rec_act_resolve"] button,
+    div[data-testid*="btn_rec_act_resolve"] button {
+        border: 1px solid #CBD5E1 !important;
+        background: #FFFFFF !important;
+    }
+    div[class*="st-key-btn_rec_act_resolve"] button p,
+    div[data-testid*="btn_rec_act_resolve"] button p {
+        color: #475569 !important;
+    }
+    div[class*="st-key-btn_rec_act_resolve"] button:hover,
+    div[data-testid*="btn_rec_act_resolve"] button:hover {
+        border-color: #94A3B8 !important;
+        background: #F1F5F9 !important;
+    }
+
+    div[class*="st-key-sim_trigger_card_"] button,
+    div[data-testid*="sim_trigger_card_"] button {
+        border-radius: 8px !important;
+        padding: 0.5rem 0.75rem !important;
+        text-align: left !important;
+        width: 100% !important;
+        white-space: pre-line !important;
+        line-height: 1.35 !important;
+        margin-bottom: 0.35rem !important;
+        box-shadow: none !important;
+    }
+    div[class*="st-key-sim_trigger_card_ed"] button,
+    div[data-testid*="sim_trigger_card_ed"] button {
+        background: #FEF2F2 !important;
+        border: 1px solid #FEE2E2 !important;
+        color: #DC2626 !important;
+    }
+    div[class*="st-key-sim_trigger_card_ed"] button:hover,
+    div[data-testid*="sim_trigger_card_ed"] button:hover {
+        border-color: #FCA5A5 !important;
+        background: #FEE2E2 !important;
+    }
+    div[class*="st-key-sim_trigger_card_icu"] button,
+    div[data-testid*="sim_trigger_card_icu"] button {
+        background: #FFFBEB !important;
+        border: 1px solid #FEF3C7 !important;
+        color: #D97706 !important;
+    }
+    div[class*="st-key-sim_trigger_card_icu"] button:hover,
+    div[data-testid*="sim_trigger_card_icu"] button:hover {
+        border-color: #FCD34D !important;
+        background: #FEF3C7 !important;
+    }
+    div[class*="st-key-sim_trigger_card_staff"] button,
+    div[data-testid*="sim_trigger_card_staff"] button {
+        background: #F5F3FF !important;
+        border: 1px solid #EDE9FE !important;
+        color: #7C3AED !important;
+    }
+    div[class*="st-key-sim_trigger_card_staff"] button:hover,
+    div[data-testid*="sim_trigger_card_staff"] button:hover {
+        border-color: #C4B5FD !important;
+        background: #EDE9FE !important;
+    }
     </style>
     """
     css = css.replace("VAR_BODY_BG", body_bg)

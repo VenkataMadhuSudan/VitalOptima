@@ -87,11 +87,17 @@ def show_historical_data_view():
         </div>
         """, unsafe_allow_html=True)
 
-        # AI Engine Settings Expander (Google Gemini AI or Local Engine)
-        active_gemini_key = st.session_state.get("gemini_api_key") or os.environ.get("GEMINI_API_KEY", "")
-        has_gemini = bool(active_gemini_key and str(active_gemini_key).strip())
+        # AI Engine Settings Expander (xAI Grok / Google Gemini / Local Engine)
+        active_llm_key = st.session_state.get("gemini_api_key") or os.environ.get("XAI_API_KEY") or os.environ.get("GEMINI_API_KEY", "")
+        has_llm = bool(active_llm_key and str(active_llm_key).strip())
+        is_grok = bool(os.environ.get("XAI_API_KEY") or (has_llm and str(active_llm_key).startswith("xai-")))
 
-        status_badge_html = '<span style="color: #10B981; font-weight: 700;">🟢 Google Gemini AI Active</span>' if has_gemini else '<span style="color: #64748B; font-weight: 700;">⚪ Local High-Precision NL2SQL Engine</span>'
+        if is_grok:
+            status_badge_html = '<span style="color: #10B981; font-weight: 700;">🟢 xAI Grok-2 Active (Cloud LLM)</span>'
+        elif has_llm:
+            status_badge_html = '<span style="color: #10B981; font-weight: 700;">🟢 Google Gemini AI Active</span>'
+        else:
+            status_badge_html = '<span style="color: #64748B; font-weight: 700;">⚪ Local High-Precision NL2SQL Engine (Zero-Key Mode)</span>'
 
         with st.expander("⚙️ AI Assistant Settings & Cloud LLM Config", expanded=False):
             st.markdown(f"""
@@ -103,19 +109,19 @@ def show_historical_data_view():
             k_col1, k_col2 = st.columns([4, 1.2])
             with k_col1:
                 entered_key = st.text_input(
-                    "Google Gemini API Key:",
-                    value=active_gemini_key if has_gemini else "",
+                    "xAI Grok or Gemini API Key:",
+                    value=active_llm_key if has_llm else "",
                     type="password",
-                    placeholder="AIzaSy...",
+                    placeholder="xai-... or AIzaSy...",
                     key="pe_gemini_key_input",
-                    help="Keys entered here are shared seamlessly across both What-If Simulator and Records Search."
+                    help="Supports xAI Grok (XAI_API_KEY) and Google Gemini (GEMINI_API_KEY). Keys entered here are shared across the system."
                 )
             with k_col2:
                 if st.button("💾 Save Key", width="stretch", key="pe_save_gemini_key_btn"):
                     st.session_state["gemini_api_key"] = entered_key.strip()
                     st.success("API Key saved!")
                     st.rerun()
-            st.markdown("<div style='font-size: 0.78rem; color: #64748B; margin-top: 0.25rem;'>Get a free Gemini API key from <a href='https://aistudio.google.com/app/apikey' target='_blank' style='color: #1E60F2; font-weight: 600;'>Google AI Studio</a>. Zero-key mode uses our local database NL2SQL engine.</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 0.78rem; color: #64748B; margin-top: 0.25rem;'>Add <code>XAI_API_KEY</code> to <code>.env</code> to activate xAI Grok. Zero-key mode uses our local database NL2SQL engine.</div>", unsafe_allow_html=True)
 
         # Quick Question Chips (Clickable)
         st.markdown("<p style='font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 0.4rem;'>💡 Quick Example Questions:</p>", unsafe_allow_html=True)

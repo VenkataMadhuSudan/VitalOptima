@@ -391,18 +391,12 @@ def _build_overview_table(crisis_ed: int, crisis_gen: int, crisis_icu: int, cris
 # GOOGLE GEMINI GENERATIVE AI INTEGRATION (OPTIONAL CLOUD LLM ENGINE)
 # =============================================================================
 
-def run_gemini_what_if_simulation(query: str, api_key: str) -> Dict[str, Any]:
+def run_gemini_what_if_simulation(query: str, api_key: str = None) -> Dict[str, Any]:
     """
-    Executes deep clinical and logistics reasoning using Google Gemini Generative AI.
+    Executes deep clinical and logistics reasoning using Google Gemini Generative AI or xAI Grok.
     Dynamically generates context-specific tables, HICS action plans, and scenario metrics.
     """
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            generation_config={"response_mime_type": "application/json"}
-        )
         prompt = f"""You are the Chief Incident Commander and Operational AI for VitalOptima Command Center.
 A hospital disaster coordinator asks this hypothetical emergency simulation inquiry:
 "{query}"
@@ -447,10 +441,56 @@ Analyze this crisis and return strictly valid JSON matching this schema:
         "Executive takeaway 3"
     ]
 }}
+Only return valid JSON.
 """
-        response = model.generate_content(prompt)
-        raw_text = response.text.strip()
-        data = json.loads(raw_text)
+        k_str = (api_key or "").strip()
+        if not k_str:
+            k_str = (os.getenv("XAI_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip()
+        if not k_str:
+            return None
+
+        is_grok = k_str.startswith("xai-") or bool(os.getenv("XAI_API_KEY"))
+        is_openai = k_str.startswith("sk-") and not is_grok
+        raw_text = ""
+        engine_label = "xAI Grok-2" if is_grok else "Google Gemini 1.5 Flash"
+
+
+        if is_grok or is_openai:
+            from openai import OpenAI
+            base_url = "https://api.x.ai/v1" if is_grok else None
+            model_name = os.getenv("XAI_MODEL", "grok-2-latest") if is_grok else "gpt-4o-mini"
+            client = OpenAI(api_key=k_str, base_url=base_url) if base_url else OpenAI(api_key=k_str)
+            resp = client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.2,
+                response_format={"type": "json_object"}
+            )
+            raw_text = resp.choices[0].message.content or "{}"
+        else:
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=k_str)
+                model = genai.GenerativeModel(
+                    model_name="gemini-1.5-flash",
+                    generation_config={"response_mime_type": "application/json"}
+                )
+                response = model.generate_content(prompt)
+                raw_text = response.text.strip()
+            except Exception:
+                from openai import OpenAI
+                client = OpenAI(
+                    api_key=k_str,
+                    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+                )
+                resp = client.chat.completions.create(
+                    model="gemini-1.5-flash",
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                raw_text = resp.choices[0].message.content or "{}"
+
+        cleaned = re.sub(r'```(?:json)?\s*', '', raw_text).rstrip('`').strip()
+        data = json.loads(cleaned)
 
         table_rows = data.get("table_rows", [])
         primary_df = pd.DataFrame(table_rows) if table_rows else pd.DataFrame()
@@ -483,7 +523,7 @@ Analyze this crisis and return strictly valid JSON matching this schema:
 
         return {
             "success": True,
-            "engine": "Google Gemini 1.5 Flash (Generative AI)",
+            "engine": engine_label,
             "query": query,
             "matched_intent": data.get("matched_intent", "overview"),
             "table_title": table_title,
@@ -534,8 +574,8 @@ def parse_what_if_query(query: str, api_key: str = None) -> Dict[str, Any]:
             "query": q_raw
         }
 
-    # Step 0: Try Google Gemini API if key is present
-    effective_key = api_key or os.environ.get("GEMINI_API_KEY")
+    # Step 0: Try xAI Grok, OpenAI, or Google Gemini API if key is present
+    effective_key = api_key or os.environ.get("XAI_API_KEY") or os.environ.get("GEMINI_API_KEY") or os.environ.get("OPENAI_API_KEY")
     if effective_key and str(effective_key).strip():
         gemini_result = run_gemini_what_if_simulation(q_raw, str(effective_key).strip())
         if gemini_result and gemini_result.get("success"):
