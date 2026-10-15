@@ -296,6 +296,42 @@ Telemetry below reflects out-of-sample holdout test evaluations (80/20 chronolog
 
 ---
 
+## 🛠️ CLI Pipeline & Predefined Scenarios
+
+In addition to the interactive web application, VitalOptima provides standalone CLI scripts for dataset generation, validation, ML model training, and stress scenario generation:
+
+### 1. Dataset Generation & Validation
+```bash
+# Generate clean de-identified baseline hospital telemetry:
+python src/generate_dataset.py
+
+# Run clinical telemetry audit and range integrity validation:
+python src/validate_dataset.py
+```
+
+### 2. Standalone Model Training & Overlay Forecaster
+```bash
+# Train Random Forest and Ridge Regression models on chronological 80/20 split:
+python src/ml_forecast.py
+
+# Simulate an active 5-day patient surge overlay (+50% arrival multiplier):
+python src/ml_forecast.py --surge-multiplier 1.5 --surge-days 5
+```
+> *Metrics and predictions are computed by the pipeline and written to `ml_outputs/`; they are **never** hardcoded in the raw dataset.*
+
+### 3. Predefined Test Scenarios (`python src/scenarios.py` → `data/scenarios/<name>/`)
+Runs offline stress scenario simulations without modifying baseline CSV telemetry:
+
+| Scenario Name | Description & Impact | Associated CLI Command |
+|---|---|---|
+| `emergency_surge` | Scales `forecast_demand` × 1.5 for ED, × 1.25 for general beds, and × 1.35 for ICU. | `python src/ml_forecast.py --surge-multiplier 1.5 --surge-days 5` |
+| `icu_capacity_loss` | Takes 8 ICU beds (5 MICU, 3 SICU) offline due to contamination/repairs; flags 3 displaced patients for relocation. | `python src/scenarios.py` |
+| `staff_shortage` | Induces a 25% nurse absenteeism shock across acute shifts; highlights float pool reallocation triggers. | `python src/scenarios.py` |
+| `supply_stockout` | Sets critical N95 respirators and surgical consumables to 0 units; triggers emergency procurement protocols. | `python src/scenarios.py` |
+
+
+---
+
 ## 🛡️ Model Governance, Privacy & Ethical AI
 
 1. **Human-in-the-Loop Safeguard**: VitalOptima never autonomously dispatches resources or changes patient records without explicit human review and cryptographic audit logging.
