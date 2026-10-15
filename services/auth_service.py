@@ -698,3 +698,92 @@ def update_user_password(
     )
     return True
 
+
+def update_user_profile(
+    user_identifier: Any,
+    full_name: Optional[str] = None,
+    department: Optional[str] = None,
+    role: Optional[str] = None,
+    actor_user: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Updates an accessor's account metadata (Full Name, Department, and/or Role).
+    Enforces 'users.manage' permission on the administrative caller.
+    Synchronizes updates across SQLite and PostgreSQL and logs the audit event.
+    """
+    require_permission("users.manage", actor_user)
+    actor_username = (actor_user.get("username", "admin") if actor_user else "admin").strip().lower()
+    actor_role = actor_user.get("role", ROLE_ADMIN) if actor_user else ROLE_ADMIN
+
+    target_name = _resolve_username(user_identifier)
+    if not target_name:
+        raise ValueError(f"Accessor account '{user_identifier}' not found.")
+
+    clean_target = target_name.strip().lower()
+
+    # Validate role if provided
+    clean_role = None
+    if role is not None:
+        clean_role = role.strip().upper()
+        if clean_role not in VALID_ROLES:
+            raise ValueError(f"Invalid role '{role}'. Permitted roles are: {VALID_ROLES}")
+        # Safeguard: Prevent admin from demoting their own active session if they are currently an admin
+        if clean_target == actor_username and clean_role != ROLE_ADMIN:
+            raise ValueError("You cannot demote your own active administrator account.")
+
+    clean_name = full_name.strip() if full_name is not None and full_name.strip() else None
+    clean_dept = department.strip() if department is not None and department.strip() else None
+
+    # Update SQLite
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE users
+        SET full_name = COALESCE(?, full_name),
+            department = COALESCE(?, department),
+            role = COALESCE(?, role)
+        WHERE LOWER(username) = ?
+    """, (clean_name, clean_dept, clean_role, clean_target))
+    conn.commit()
+
+    cursor.execute("SELECT id, username, role, full_name, department, is_active FROM users WHERE LOWER(username) = ?", (clean_target,))
+    updated_row = cursor.fetchone()
+    conn.close()
+
+    # Update PostgreSQL if available
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.begin() as pg_conn:
+                pg_conn.execute(text("""
+                    UPDATE users
+                    SET full_name = COALESCE(:fn, full_name),
+                        department = COALESCE(:dept, department),
+                        role = COALESCE(:r, role)
+                    WHERE LOWER(username) = :u;
+                """), {"fn": clean_name, "dept": clean_dept, "r": clean_role, "u": clean_target})
+    except Exception as e:
+        print(f"[Auth] Warning updating user profile in Postgres: {e}")
+
+    changes = []
+    if clean_name:
+        changes.append(f"name='{clean_name}'")
+    if clean_dept:
+        changes.append(f"dept='{clean_dept}'")
+    if clean_role:
+        changes.append(f"role='{clean_role}'")
+
+    log_audit_event(
+        actor_username=actor_username,
+        actor_role=actor_role,
+        action="users.update_profile",
+        target_id=clean_target,
+        target_type="user",
+        status="SUCCESS",
+        details=f"Updated accessor profile for '{clean_target}': {', '.join(changes) if changes else 'no change'}"
+    )
+
+    return dict(updated_row) if updated_row else {"username": clean_target}
+

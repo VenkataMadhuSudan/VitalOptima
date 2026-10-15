@@ -218,21 +218,20 @@ def init_db():
     )
     """)
 
-    cursor.execute("SELECT COUNT(*) FROM users")
-    if cursor.fetchone()[0] == 0:
-        from services.auth_service import hash_password
-        admin_hash, admin_salt = hash_password("Admin@Vital2026!")
-        officer_hash, officer_salt = hash_password("Admit@Vital2026!")
-        now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
-        default_users = [
-            ("admin", admin_hash, admin_salt, "ADMIN", "Dr. Rajesh Sharma (Medical Director)", "Hospital Administration", 1, now_ts),
-            ("admit_officer", officer_hash, officer_salt, "ADMISSION_OFFICER", "Priya Nair (Lead Admission Officer)", "Central Admissions & Triage", 1, now_ts)
-        ]
-        cursor.executemany("""
-            INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, default_users)
+    # Ensure default users exist in SQLite
+    for uname, pw, role, fname, dept in [
+        ("admin", "Admin@Vital2026!", "ADMIN", "Dr. Rajesh Sharma (Medical Director)", "Hospital Administration"),
+        ("admit_officer", "Admit@Vital2026!", "ADMISSION_OFFICER", "Priya Nair (Lead Admission Officer)", "Central Admissions & Triage")
+    ]:
+        cursor.execute("SELECT id FROM users WHERE LOWER(username) = ?", (uname.lower(),))
+        if not cursor.fetchone():
+            from services.auth_service import hash_password
+            h, s = hash_password(pw)
+            now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            cursor.execute("""
+                INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+            """, (uname, h, s, role, fname, dept, now_ts))
 
     # Sync default admin users to Postgres if available
     try:

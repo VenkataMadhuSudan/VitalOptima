@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from db.database import init_db
 from services.auth_service import (
     authenticate_user, get_all_users, create_new_user,
-    toggle_user_status, delete_user, update_user_password,
+    toggle_user_status, delete_user, update_user_password, update_user_profile,
     ROLE_ADMIN, ROLE_ADMISSION_OFFICER
 )
 from services.dashboard_summarizer import DashboardSummarizerService, handle_dashboard_qa_request
@@ -28,6 +28,27 @@ class TestSettingsAndSummarizerQA(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         init_db()
+        from services.auth_service import hash_password, get_sqlite_conn
+        ah, asalt = hash_password("Admin@Vital2026!")
+        oh, osalt = hash_password("Admit@Vital2026!")
+        conn = get_sqlite_conn()
+        c = conn.cursor()
+        c.execute("UPDATE users SET password_hash = ?, salt = ?, is_active = 1 WHERE LOWER(username) = 'admin'", (ah, asalt))
+        c.execute("UPDATE users SET password_hash = ?, salt = ?, is_active = 1 WHERE LOWER(username) = 'admit_officer'", (oh, osalt))
+        conn.commit()
+        conn.close()
+
+        try:
+            from db.postgres import get_engine
+            from sqlalchemy import text
+            eng = get_engine()
+            if eng is not None:
+                with eng.begin() as pg_conn:
+                    pg_conn.execute(text("UPDATE users SET password_hash = :h, salt = :s, is_active = true WHERE LOWER(username) = 'admin';"), {"h": ah, "s": asalt})
+                    pg_conn.execute(text("UPDATE users SET password_hash = :h, salt = :s, is_active = true WHERE LOWER(username) = 'admit_officer';"), {"h": oh, "s": osalt})
+        except Exception:
+            pass
+
         cls.admin_user = authenticate_user("admin", "Admin@Vital2026!")
         cls.officer_user = authenticate_user("admit_officer", "Admit@Vital2026!")
         
@@ -211,6 +232,53 @@ class TestSettingsAndSummarizerQA(unittest.TestCase):
         new_login = authenticate_user("night_nurse_triage", "NewSecretPass@2026")
         self.assertIsNotNone(new_login)
         self.assertEqual(new_login["username"], "night_nurse_triage")
+
+        # 6. Admin can also update their OWN password
+        ok_self_pw = update_user_password(
+            user_identifier="admin",
+            new_password="NewAdminPassword@2026!",
+            actor_user=self.admin_user
+        )
+        self.assertTrue(ok_self_pw)
+        auth_new_admin = authenticate_user("admin", "NewAdminPassword@2026!")
+        self.assertIsNotNone(auth_new_admin)
+
+        # Restore admin password for baseline
+        update_user_password(
+            user_identifier="admin",
+            new_password="Admin@Vital2026!",
+            actor_user=self.admin_user
+        )
+
+    def test_07_update_user_profile(self):
+        """Verify an admin can update another user's name, department, and role."""
+        # Update night_nurse_triage profile
+        updated = update_user_profile(
+            user_identifier="night_nurse_triage",
+            full_name="Sarah Connor, Chief Triage Lead",
+            department="Trauma Center",
+            role=ROLE_ADMIN,
+            actor_user=self.admin_user
+        )
+        self.assertEqual(updated["full_name"], "Sarah Connor, Chief Triage Lead")
+        self.assertEqual(updated["department"], "Trauma Center")
+        self.assertEqual(updated["role"], ROLE_ADMIN)
+
+        # Demote back to ADMISSION_OFFICER
+        demoted = update_user_profile(
+            user_identifier="night_nurse_triage",
+            role=ROLE_ADMISSION_OFFICER,
+            actor_user=self.admin_user
+        )
+        self.assertEqual(demoted["role"], ROLE_ADMISSION_OFFICER)
+
+        # Self-demotion safeguard: Admin cannot demote their own active session
+        with self.assertRaises(ValueError):
+            update_user_profile(
+                user_identifier="admin",
+                role=ROLE_ADMISSION_OFFICER,
+                actor_user=self.admin_user
+            )
 
 
 if __name__ == "__main__":

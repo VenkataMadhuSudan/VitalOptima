@@ -10,7 +10,7 @@ from config import HOSPITAL_NAME, ADMIN_USER, ADMIN_INITIALS, get_system_timesta
 from services.auth_service import (
     get_current_user, require_permission, has_permission,
     get_all_users, create_new_user, toggle_user_status, delete_user,
-    update_user_password,
+    update_user_password, update_user_profile,
     get_recent_audit_logs, ROLE_ADMIN, ROLE_ADMISSION_OFFICER
 )
 from ui.components import render_top_nav, render_footer
@@ -104,67 +104,161 @@ def show_settings_view():
             df_users = pd.DataFrame(display_users)
             st.dataframe(df_users, width="stretch", hide_index=True)
 
-            # Account Management Actions
+            # Unified Account & Security Management
             st.markdown("<div style='height: 0.5rem;'></div>", unsafe_allow_html=True)
             with st.container(border=True):
-                st.markdown("<div style='font-size: 0.88rem; font-weight: 700; color: #1E293B; margin-bottom: 0.4rem;'>🛡️ Modify Accessor Status</div>", unsafe_allow_html=True)
-                
-                c_sel, c_act1, c_act2 = st.columns([2.5, 1.2, 1.2])
-                with c_sel:
-                    user_options = {
-                        f"{u['username']} — {u['full_name']} ({u['role']})": u['username']
-                        for u in users_list
-                    }
-                    selected_label = st.selectbox("Select Accessor to Manage", list(user_options.keys()), key="sb_manage_user")
-                    selected_username = user_options[selected_label]
-                    selected_obj = next((u for u in users_list if u['username'] == selected_username), None)
+                st.markdown("""
+                <div style="margin-bottom: 0.65rem;">
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #0F172A;">🛡️ Accessor Account & Security Management</div>
+                    <div style="font-size: 0.76rem; color: #64748B;">
+                        Select any staff member or your own account to update passwords, edit clinical titles, change roles, or toggle access status.
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-                with c_act1:
-                    st.markdown("<div style='height: 1.7rem;'></div>", unsafe_allow_html=True)
-                    if selected_obj:
-                        is_currently_active = bool(selected_obj.get("is_active", 1))
+                current_admin_user = (user.get("username") or "").strip().lower()
+                user_options = {}
+                for u in users_list:
+                    uname = u['username']
+                    is_self = " (You - Administrator)" if uname.lower() == current_admin_user else ""
+                    user_options[f"{uname} — {u['full_name']} [{u['role']}]{is_self}"] = uname
+
+                selected_label = st.selectbox(
+                    "Select Account to Manage or Update:",
+                    list(user_options.keys()),
+                    key="sb_manage_user"
+                )
+                selected_username = user_options[selected_label]
+                selected_obj = next((u for u in users_list if u['username'] == selected_username), None)
+
+                if selected_obj:
+                    is_self = selected_username.lower() == current_admin_user
+                    is_currently_active = bool(selected_obj.get("is_active", 1))
+
+                    # ---------------------------------------------------------
+                    # PART 1: PROFILE & ROLE MANAGEMENT
+                    # ---------------------------------------------------------
+                    st.markdown("<div style='height: 0.35rem;'></div>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 0.6rem 0.85rem; margin-bottom: 0.75rem;">
+                        <div style="font-size: 0.82rem; font-weight: 700; color: #1E293B; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <span>👤</span> Profile & Permissions: <b>{selected_obj.get('full_name')}</b> (@{selected_username})
+                            {'<span style="font-size: 0.7rem; background: #DBEAFE; color: #1E40AF; padding: 1px 6px; border-radius: 4px; font-weight: 700;">Current Session</span>' if is_self else ''}
+                        </div>
+                        <div style="font-size: 0.74rem; color: #64748B;">
+                            Status: <span style="font-weight: 700; color: {'#16A34A' if is_currently_active else '#DC2626'};">{'🟢 Active' if is_currently_active else '🔴 Suspended'}</span> • 
+                            Assigned Role: <b>{selected_obj.get('role')}</b> • 
+                            Department: <b>{selected_obj.get('department') or 'General Hospital'}</b>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    col_name, col_dept, col_role = st.columns([2.4, 2.0, 1.6])
+                    with col_name:
+                        edit_name = st.text_input(
+                            "Full Name & Title",
+                            value=selected_obj.get("full_name", ""),
+                            key=f"edit_name_{selected_username}"
+                        )
+                    with col_dept:
+                        edit_dept = st.text_input(
+                            "Hospital Department / Unit",
+                            value=selected_obj.get("department", "Hospital Administration"),
+                            key=f"edit_dept_{selected_username}"
+                        )
+                    with col_role:
+                        role_choices = [ROLE_ADMIN, ROLE_ADMISSION_OFFICER]
+                        cur_role_idx = 0 if selected_obj.get("role") == ROLE_ADMIN else 1
+                        edit_role = st.selectbox(
+                            "System Role",
+                            role_choices,
+                            index=cur_role_idx,
+                            key=f"edit_role_{selected_username}"
+                        )
+
+                    btn_c1, btn_c2, btn_c3 = st.columns([1.8, 1.4, 1.4])
+                    with btn_c1:
+                        if st.button("💾 Save Profile Changes", type="secondary", width="stretch", key=f"btn_save_profile_{selected_username}"):
+                            try:
+                                update_user_profile(
+                                    selected_username,
+                                    full_name=edit_name.strip(),
+                                    department=edit_dept.strip(),
+                                    role=edit_role,
+                                    actor_user=user
+                                )
+                                st.success(f"Profile for '{selected_username}' successfully updated!")
+                                st.rerun()
+                            except Exception as ex_p:
+                                st.error(str(ex_p))
+
+                    with btn_c2:
                         btn_label = "🔴 Deactivate" if is_currently_active else "🟢 Activate"
-                        if st.button(btn_label, width="stretch", key="btn_toggle_user_status"):
+                        if st.button(btn_label, width="stretch", key=f"btn_toggle_user_status_{selected_username}"):
                             try:
                                 toggle_user_status(selected_username, not is_currently_active, actor_user=user)
-                                st.success(f"Accessor '{selected_obj['username']}' status updated!")
+                                st.success(f"Accessor '{selected_username}' status updated!")
                                 st.rerun()
-                            except Exception as ex:
-                                st.error(str(ex))
+                            except Exception as ex_t:
+                                st.error(str(ex_t))
 
-                with c_act2:
-                    st.markdown("<div style='height: 1.7rem;'></div>", unsafe_allow_html=True)
-                    if st.button("🗑️ Delete", width="stretch", type="secondary", key="btn_del_user"):
-                        try:
-                            delete_user(selected_username, actor_user=user)
-                            st.success(f"Accessor account removed.")
-                            st.rerun()
-                        except Exception as ex:
-                            st.error(str(ex))
-
-                st.markdown("<hr style='margin: 0.75rem 0 0.65rem 0; border: none; border-top: 1px dashed #CBD5E1;'/>", unsafe_allow_html=True)
-                st.markdown("<div style='font-size: 0.84rem; font-weight: 700; color: #1E293B; margin-bottom: 0.35rem;'>🔑 Update Accessor Password</div>", unsafe_allow_html=True)
-                
-                pw_col1, pw_col2 = st.columns([3.2, 1.4])
-                with pw_col1:
-                    new_pw_input = st.text_input(
-                        f"New Password for {selected_username}",
-                        type="password",
-                        placeholder="Enter new password (minimum 6 characters)",
-                        key="input_update_pw"
-                    )
-                with pw_col2:
-                    st.markdown("<div style='height: 1.7rem;'></div>", unsafe_allow_html=True)
-                    if st.button("💾 Set Password", width="stretch", type="primary", key="btn_update_pw"):
-                        if not new_pw_input or len(new_pw_input.strip()) < 6:
-                            st.error("Password must be at least 6 characters long.")
-                        else:
+                    with btn_c3:
+                        if st.button("🗑️ Delete Account", width="stretch", type="secondary", key=f"btn_del_user_{selected_username}"):
                             try:
-                                update_user_password(selected_username, new_pw_input.strip(), actor_user=user)
-                                st.success(f"Password for '{selected_username}' has been updated!")
+                                delete_user(selected_username, actor_user=user)
+                                st.success(f"Accessor account '{selected_username}' permanently removed.")
                                 st.rerun()
-                            except Exception as e_pw:
-                                st.error(str(e_pw))
+                            except Exception as ex_d:
+                                st.error(str(ex_d))
+
+                    # ---------------------------------------------------------
+                    # PART 2: PASSWORD MANAGEMENT (ANY OFFICER OR YOURSELF)
+                    # ---------------------------------------------------------
+                    st.markdown("<hr style='margin: 0.85rem 0 0.75rem 0; border: none; border-top: 1px dashed #CBD5E1;'/>", unsafe_allow_html=True)
+                    
+                    pw_header = "🔑 Change Your Administrator Password" if is_self else f"🔑 Change Password for {selected_username} ({selected_obj.get('full_name')})"
+                    pw_desc = (
+                        "Update your administrator password. The new password will take effect immediately for future logins."
+                        if is_self else
+                        f"Reset the password for {selected_username}. They will use this new password upon next sign-in."
+                    )
+                    st.markdown(f"""
+                    <div style="margin-bottom: 0.4rem;">
+                        <div style="font-size: 0.86rem; font-weight: 700; color: #0F172A;">{pw_header}</div>
+                        <div style="font-size: 0.74rem; color: #64748B;">{pw_desc}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    pw_col1, pw_col2, pw_btn_col = st.columns([2.5, 2.5, 1.6])
+                    with pw_col1:
+                        new_pw_input = st.text_input(
+                            "New Password",
+                            type="password",
+                            placeholder="Min 6 characters",
+                            key=f"input_new_pw_{selected_username}"
+                        )
+                    with pw_col2:
+                        confirm_pw_input = st.text_input(
+                            "Confirm New Password",
+                            type="password",
+                            placeholder="Re-enter password",
+                            key=f"input_confirm_pw_{selected_username}"
+                        )
+                    with pw_btn_col:
+                        st.markdown("<div style='height: 1.7rem;'></div>", unsafe_allow_html=True)
+                        if st.button("💾 Set Password", width="stretch", type="primary", key=f"btn_update_pw_{selected_username}"):
+                            if not new_pw_input or len(new_pw_input.strip()) < 6:
+                                st.error("Password must be at least 6 characters long.")
+                            elif new_pw_input.strip() != confirm_pw_input.strip():
+                                st.error("Passwords do not match. Please verify both fields.")
+                            else:
+                                try:
+                                    update_user_password(selected_username, new_pw_input.strip(), actor_user=user)
+                                    msg = "Your administrator password has been updated!" if is_self else f"Password for '{selected_username}' has been updated!"
+                                    st.success(msg)
+                                    st.rerun()
+                                except Exception as e_pw:
+                                    st.error(str(e_pw))
 
     # =========================================================================
     # TAB 2: PROVISION NEW ACCESSOR ACCOUNT
