@@ -22,6 +22,7 @@ from ui.views.decision_log import show_decision_log
 from ui.views.postgres_explorer import show_historical_data_view
 from ui.views.login_view import show_login_view
 from ui.views.admission_workspace import show_admission_workspace
+from ui.views.settings_view import show_settings_view
 from services.auth_service import get_current_user, logout_user, has_permission
 
 # Page configuration
@@ -111,7 +112,8 @@ with st.sidebar:
             "What-if Simulator",
             "Decision Log",
             "Inventory Forecasting",
-            "Historical Data & Records"
+            "Historical Data & Records",
+            "Settings"
         ]
 
     icons = {
@@ -124,7 +126,8 @@ with st.sidebar:
         "What-if Simulator": "🎛️",
         "Decision Log": "📋",
         "Inventory Forecasting": "📦",
-        "Historical Data & Records": "🗄️"
+        "Historical Data & Records": "🗄️",
+        "Settings": "⚙️"
     }
 
     current_idx = 0
@@ -201,6 +204,11 @@ elif active_view in ["Historical Data & Records", "PostgreSQL Explorer"]:
         st.error("⛔ Access Denied.")
     else:
         show_historical_data_view()
+elif active_view in ["Settings", "Settings & Access Management"]:
+    if not has_permission(current_user, "users.manage"):
+        st.error("⛔ Access Denied: Administrator role required.")
+    else:
+        show_settings_view()
 elif active_view == "Inventory Forecasting":
     from ui.components import render_top_nav, render_footer
     from config import HOSPITAL_NAME, ADMIN_INITIALS, ADMIN_USER, DATA_DIR, get_system_timestamp

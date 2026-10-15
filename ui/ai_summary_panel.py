@@ -6,18 +6,27 @@ deterministic data freshness indicator, refresh control, copy summary,
 and interactive parameter-safe contextual follow-up query engine.
 """
 
+import time
 import streamlit as st
 from typing import Dict, Any, Optional
 from services.dashboard_summarizer import DashboardSummarizerService, handle_dashboard_qa_request
-from config import ADMIN_USER
+from config import ADMIN_USER, get_ist_now
 
 
 def _get_auth_context() -> Dict[str, Any]:
     """Retrieves current authenticated administrator context from session state."""
+    auth_user = st.session_state.get("authenticated_user")
+    if isinstance(auth_user, dict):
+        return {
+            "user_id": str(auth_user.get("id", "admin_01")),
+            "username": auth_user.get("username", ADMIN_USER),
+            "role": auth_user.get("role", "ADMIN"),
+            "department": auth_user.get("department", "Hospital Administration")
+        }
     return {
-        "user_id": st.session_state.get("user_id", "admin_01"),
-        "username": ADMIN_USER,
-        "role": st.session_state.get("user_role", "hospital_admin"),
+        "user_id": str(st.session_state.get("user_id", "admin_01")),
+        "username": str(st.session_state.get("username", ADMIN_USER)),
+        "role": str(st.session_state.get("user_role", "ADMIN")),
         "department": "Hospital Administration"
     }
 
@@ -427,63 +436,119 @@ def render_floating_ai_assistant():
         st.html("<hr style='margin: 0.65rem 0;'/>")
 
         # ---------------------------------------------------------------------
-        # SECTION 10: CONTEXTUAL FOLLOW-UP Q&A
+        # SECTION 10: CONTEXTUAL FOLLOW-UP Q&A (MULTI-QUERY & HISTORY CLEAR)
         # ---------------------------------------------------------------------
-        st.html("""
-        <div style="font-size: 0.76rem; font-weight: 800; color: #0F172A; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
-            <span>💬</span> Ask About Hospital Resources
-        </div>
-        """)
+        qa_head_col, qa_clear_col = st.columns([2.8, 1.2])
+        with qa_head_col:
+            st.html("""
+            <div style="font-size: 0.78rem; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 0.35rem; margin-top: 0.15rem;">
+                <span>💬</span> Ask About Hospital Resources
+            </div>
+            """)
+        with qa_clear_col:
+            if st.session_state.get("ai_qa_history"):
+                if st.button("🧹 Clear", key="btn_clear_ai_qa_top", width="stretch", help="Clear all query history"):
+                    st.session_state["ai_qa_history"] = []
+                    st.rerun()
 
-        # Quick Suggestion Chips
+        # Quick Suggestion Chips (immediate execution on click)
+        clicked_chip_query = None
         chip1, chip2 = st.columns(2)
         with chip1:
             if st.button("🔥 Most Urgent?", key="btn_qa_chip_1", width="stretch"):
-                st.session_state["qa_pending_query"] = "Which department needs the most attention?"
-                st.rerun()
+                clicked_chip_query = "Which department needs the most attention?"
             if st.button("🫀 ICU Utilization?", key="btn_qa_chip_2", width="stretch"):
-                st.session_state["qa_pending_query"] = "Why is ICU utilization high?"
-                st.rerun()
+                clicked_chip_query = "Why is ICU utilization high?"
+            if st.button("🩸 Blood Backup?", key="btn_qa_chip_5", width="stretch"):
+                clicked_chip_query = "What is the status of the blood bank and available blood reserves?"
         with chip2:
             if st.button("📈 Demand vs Capacity?", key="btn_qa_chip_3", width="stretch"):
-                st.session_state["qa_pending_query"] = "How does predicted demand compare with capacity?"
-                st.rerun()
+                clicked_chip_query = "How does predicted demand compare with capacity?"
             if st.button("📦 Low Supplies?", key="btn_qa_chip_4", width="stretch"):
-                st.session_state["qa_pending_query"] = "Which resources or supplies are below required levels?"
-                st.rerun()
+                clicked_chip_query = "Which resources or supplies are below required levels?"
+            if st.button("👥 Staffing Status?", key="btn_qa_chip_6", width="stretch"):
+                clicked_chip_query = "What is the current nurse and doctor availability?"
 
-        # Follow-up form input
-        default_val = st.session_state.pop("qa_pending_query", "")
+        # Continuous Multi-Query Input with Clear-on-Submit form
         with st.form("form_ai_summary_qa", clear_on_submit=True):
             user_q = st.text_input(
                 "Follow-up Question",
-                value=default_val,
-                placeholder="Ask about your hospital resources...",
-                label_visibility="collapsed"
+                placeholder="Ask about hospital resources (Press Enter or Send)...",
+                label_visibility="collapsed",
+                key="ai_qa_text_input_box"
             )
-            submit_qa = st.form_submit_button("Send Query ➔", width="stretch")
+            q_btn_col1, q_btn_col2 = st.columns([3.2, 1.0])
+            with q_btn_col1:
+                submit_qa = st.form_submit_button("Send Query ➔", width="stretch", type="primary")
+            with q_btn_col2:
+                reset_submit = st.form_submit_button("Clear", width="stretch")
 
-        if submit_qa and user_q:
+        if reset_submit:
+            st.session_state["ai_qa_history"] = []
+            st.rerun()
+
+        # Execute query if chip clicked OR form submitted
+        target_query = None
+        if clicked_chip_query:
+            target_query = clicked_chip_query
+        elif submit_qa and user_q and user_q.strip():
+            target_query = user_q.strip()
+
+        if target_query:
             with st.spinner("Analyzing verified metrics..."):
                 qa_res = handle_dashboard_qa_request(
                     auth_context=auth_context,
-                    query=user_q,
+                    query=target_query,
                     current_summary=summary
                 )
+                ts_str = get_ist_now().strftime("%I:%M %p")
+                if "ai_qa_history" not in st.session_state:
+                    st.session_state["ai_qa_history"] = []
                 st.session_state["ai_qa_history"].insert(0, {
-                    "question": user_q,
-                    "answer": qa_res.get("answer", "No answer found.")
+                    "id": f"qa_{int(time.time() * 1000)}",
+                    "question": target_query,
+                    "answer": qa_res.get("answer", "No answer found."),
+                    "timestamp": ts_str
                 })
+                # Retain conversation history up to 25 items
+                if len(st.session_state["ai_qa_history"]) > 25:
+                    st.session_state["ai_qa_history"].pop()
+                st.rerun()
 
-        # Render Q&A History
+        # Render Full Interactive Q&A History with Individual Deletion
         qa_history = st.session_state.get("ai_qa_history", [])
         if qa_history:
-            st.html("<div style='margin-top: 0.45rem;'>")
-            for item in qa_history[:3]:
-                st.markdown(f"**Q: {item['question']}**")
-                st.markdown(item["answer"])
-                st.html("<hr style='margin: 0.4rem 0;'/>")
-            st.html("</div>")
+            st.html(f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0.65rem 0 0.35rem 0; border-top: 1px solid #E2E8F0; padding-top: 0.45rem;">
+                <span style="font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Query History ({len(qa_history)})</span>
+                <span style="font-size: 0.65rem; color: #94A3B8;">Click 🗑️ to remove an individual query</span>
+            </div>
+            """)
+
+            delete_target_index = None
+            for idx, item in enumerate(qa_history):
+                # Question header pill
+                st.html(f"""
+                <div style="background: #F1F5F9; border-left: 3px solid #3B82F6; border-radius: 6px; padding: 0.4rem 0.55rem; margin-top: 0.35rem; margin-bottom: 0.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.74rem; font-weight: 700; color: #0F172A;">Q: {item.get('question')}</span>
+                        <span style="font-size: 0.64rem; color: #64748B;">{item.get('timestamp', '')}</span>
+                    </div>
+                </div>
+                """)
+
+                q_body_col, q_del_col = st.columns([8.8, 1.2])
+                with q_body_col:
+                    st.markdown(item.get("answer", ""))
+                with q_del_col:
+                    if st.button("🗑️", key=f"btn_del_qa_{item.get('id', idx)}", help="Delete this query from history"):
+                        delete_target_index = idx
+
+                st.html("<hr style='margin: 0.3rem 0 0.45rem 0; border: none; border-top: 1px dashed #E2E8F0;'/>")
+
+            if delete_target_index is not None:
+                st.session_state["ai_qa_history"].pop(delete_target_index)
+                st.rerun()
 
 
 def _build_plain_text_summary(summary: Dict[str, Any]) -> str:

@@ -234,6 +234,26 @@ def init_db():
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, default_users)
 
+    # Sync default admin users to Postgres if available
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.begin() as pg_conn:
+                from services.auth_service import hash_password
+                admin_hash, admin_salt = hash_password("Admin@Vital2026!")
+                officer_hash, officer_salt = hash_password("Admit@Vital2026!")
+                pg_conn.execute(text("""
+                    INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
+                    VALUES 
+                    ('admin', :ah, :as, 'ADMIN', 'Dr. Rajesh Sharma (Medical Director)', 'Hospital Administration', true, NOW()),
+                    ('admit_officer', :oh, :os, 'ADMISSION_OFFICER', 'Priya Nair (Lead Admission Officer)', 'Central Admissions & Triage', true, NOW())
+                    ON CONFLICT (username) DO NOTHING;
+                """), {"ah": admin_hash, "as": admin_salt, "oh": officer_hash, "os": officer_salt})
+    except Exception as e:
+        print(f"[DB] Notice syncing default users to Postgres: {e}")
+
     # --- 2. Patient Admissions Table ---
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS patient_admissions (

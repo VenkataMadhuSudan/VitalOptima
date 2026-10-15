@@ -366,3 +366,286 @@ def get_recent_audit_logs(limit: int = 50) -> List[Dict[str, Any]]:
         return rows
     except Exception:
         return []
+
+
+def get_all_users() -> List[Dict[str, Any]]:
+    """Retrieves all registered hospital accessors and user accounts for administrative inspection."""
+    # Try PostgreSQL first
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.connect() as conn:
+                res = conn.execute(
+                    text("SELECT id, username, role, full_name, department, is_active, created_at, last_login FROM users ORDER BY id ASC;")
+                ).mappings().all()
+                if res:
+                    return [dict(r) for r in res]
+    except Exception:
+        pass
+
+    # Fallback to local SQLite
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, username, role, full_name, department, is_active, created_at, last_login FROM users ORDER BY id ASC"
+        )
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return rows
+    except Exception as e:
+        print(f"[Auth] Error fetching all users: {e}")
+        return []
+
+
+def create_new_user(
+    username: str,
+    password: str,
+    role: str,
+    full_name: str,
+    department: Optional[str] = None,
+    actor_user: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Provisions a new authorized user account (ADMIN or ADMISSION_OFFICER).
+    Enforces 'users.manage' permission on the administrative caller.
+    """
+    require_permission("users.manage", actor_user)
+    actor_username = actor_user.get("username", "admin") if actor_user else "admin"
+    actor_role = actor_user.get("role", ROLE_ADMIN) if actor_user else ROLE_ADMIN
+
+    # Validation
+    if not username or not username.strip():
+        raise ValueError("Username is required.")
+    if not password or len(password.strip()) < 6:
+        raise ValueError("Password must be at least 6 characters long.")
+    if not full_name or not full_name.strip():
+        raise ValueError("Full Name is required.")
+    
+    clean_role = role.strip().upper()
+    if clean_role not in VALID_ROLES:
+        raise ValueError(f"Invalid role '{role}'. Permitted roles are: {VALID_ROLES}")
+
+    clean_user = username.strip().lower()
+    clean_name = full_name.strip()
+    clean_dept = (department or "Hospital").strip()
+
+    # Check for existing user
+    existing = get_user_by_username(clean_user)
+    if existing:
+        raise ValueError(f"User account '{clean_user}' already exists.")
+
+    pw_hash, salt = hash_password(password.strip())
+    now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+    # 1. SQLite insert
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+    """, (clean_user, pw_hash, salt, clean_role, clean_name, clean_dept, now_ts))
+    user_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    # 2. PostgreSQL insert if available
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.begin() as pg_conn:
+                pg_conn.execute(text("""
+                    INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
+                    VALUES (:u, :h, :s, :r, :fn, :d, true, :ts)
+                    ON CONFLICT (username) DO NOTHING;
+                """), {
+                    "u": clean_user, "h": pw_hash, "s": salt, "r": clean_role,
+                    "fn": clean_name, "d": clean_dept, "ts": datetime.utcnow()
+                })
+    except Exception as e:
+        print(f"[Auth] Warning writing new user to Postgres: {e}")
+
+    # Audit creation
+    log_audit_event(
+        actor_username=actor_username,
+        actor_role=actor_role,
+        action="users.create",
+        target_id=clean_user,
+        target_type="user",
+        status="SUCCESS",
+        details=f"Provisioned new {clean_role} account for {clean_name} ({clean_dept})"
+    )
+
+    return {
+        "id": user_id,
+        "username": clean_user,
+        "role": clean_role,
+        "full_name": clean_name,
+        "department": clean_dept,
+        "created_at": now_ts
+    }
+
+
+def _resolve_username(identifier: Any) -> Optional[str]:
+    """Safely determines the unique username regardless of DB-specific autoincrement sequence."""
+    if identifier is None:
+        return None
+    s = str(identifier).strip()
+    if not s:
+        return None
+
+    # Check if directly matches a username
+    u = get_user_by_username(s)
+    if u:
+        return u["username"]
+
+    # Try matching ID in Postgres
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.connect() as conn:
+                res = conn.execute(
+                    text("SELECT username FROM users WHERE id::text = :id OR LOWER(username) = LOWER(:u) LIMIT 1;"),
+                    {"id": s, "u": s}
+                ).mappings().first()
+                if res:
+                    return res["username"]
+    except Exception:
+        pass
+
+    # Try matching ID in SQLite
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT username FROM users WHERE CAST(id AS TEXT) = ? OR LOWER(username) = LOWER(?) LIMIT 1", (s, s))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return row["username"]
+    except Exception:
+        pass
+
+    return s
+
+
+def toggle_user_status(
+    user_identifier: Any,
+    is_active: bool,
+    actor_user: Optional[Dict[str, Any]] = None
+) -> bool:
+    """Activates or deactivates an accessor account."""
+    require_permission("users.manage", actor_user)
+    actor_username = (actor_user.get("username", "admin") if actor_user else "admin").strip().lower()
+    actor_role = actor_user.get("role", ROLE_ADMIN) if actor_user else ROLE_ADMIN
+
+    target_name = _resolve_username(user_identifier)
+    if not target_name:
+        raise ValueError(f"Accessor account '{user_identifier}' not found.")
+
+    clean_target = target_name.strip().lower()
+
+    # Prevent self-deactivation (only when attempting to deactivate)
+    if not is_active and actor_username and clean_target == actor_username:
+        raise ValueError("Cannot deactivate your own active session account.")
+
+    # Update SQLite
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET is_active = ? WHERE LOWER(username) = ?", 
+                   (1 if is_active else 0, clean_target))
+    conn.commit()
+    conn.close()
+
+    # Update PostgreSQL if available
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.begin() as pg_conn:
+                pg_conn.execute(
+                    text("UPDATE users SET is_active = :act WHERE LOWER(username) = :u;"),
+                    {"act": bool(is_active), "u": clean_target}
+                )
+    except Exception:
+        pass
+
+    status_str = "activated" if is_active else "deactivated"
+    log_audit_event(
+        actor_username=actor_username,
+        actor_role=actor_role,
+        action="users.update_status",
+        target_id=clean_target,
+        target_type="user",
+        status="SUCCESS",
+        details=f"Account '{clean_target}' was {status_str}"
+    )
+    return True
+
+
+def delete_user(
+    user_identifier: Any,
+    actor_user: Optional[Dict[str, Any]] = None
+) -> bool:
+    """Deletes a user account with safeguards against self-deletion."""
+    require_permission("users.manage", actor_user)
+    actor_username = (actor_user.get("username", "admin") if actor_user else "admin").strip().lower()
+    actor_role = actor_user.get("role", ROLE_ADMIN) if actor_user else ROLE_ADMIN
+
+    target_name = _resolve_username(user_identifier)
+    if not target_name:
+        raise ValueError(f"Accessor account '{user_identifier}' not found.")
+
+    clean_target = target_name.strip().lower()
+
+    if actor_username and clean_target == actor_username:
+        raise ValueError("Cannot delete your own active administrator account.")
+
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM users WHERE LOWER(username) = ?", (clean_target,))
+    conn.commit()
+    conn.close()
+
+    # Delete in PostgreSQL
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.begin() as pg_conn:
+                pg_conn.execute(
+                    text("DELETE FROM users WHERE LOWER(username) = :u;"),
+                    {"u": clean_target}
+                )
+    except Exception:
+        pass
+
+    log_audit_event(
+        actor_username=actor_username,
+        actor_role=actor_role,
+        action="users.delete",
+        target_id=clean_target,
+        target_type="user",
+        status="SUCCESS",
+        details=f"Deleted accessor account '{clean_target}'"
+    )
+    return True
+
+    log_audit_event(
+        actor_username=actor_username,
+        actor_role=actor_role,
+        action="users.delete",
+        target_id=target_name,
+        target_type="user",
+        status="SUCCESS",
+        details=f"Deleted accessor account '{target_name}'"
+    )
+    return True
+
