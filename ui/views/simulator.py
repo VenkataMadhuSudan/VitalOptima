@@ -58,24 +58,32 @@ def show_simulator():
         </div>
         """, unsafe_allow_html=True)
 
-        # Gemini API Key Configuration Drawer (Optional for Generative AI)
-        active_gemini_key = st.session_state.get("gemini_api_key", "")
-        has_key = bool(active_gemini_key.strip())
+        # LLM Engine Configuration Drawer (xAI Grok / Google Gemini / Local Engine)
+        active_gemini_key = st.session_state.get("gemini_api_key") or os.environ.get("XAI_API_KEY") or os.environ.get("GEMINI_API_KEY", "")
+        has_key = bool(active_gemini_key and str(active_gemini_key).strip())
+        is_grok = bool(os.environ.get("XAI_API_KEY") or (has_key and str(active_gemini_key).startswith("xai-")))
 
-        with st.expander(f"✨ AI Engine Settings: {'🟢 Google Gemini AI Active' if has_key else '⚪ Local Deterministic Engine (Zero-Key Mode)'}", expanded=False):
+        if is_grok:
+            engine_status_badge = "🟢 xAI Grok-2 Active (Cloud LLM)"
+        elif has_key:
+            engine_status_badge = "🟢 Google Gemini AI Active"
+        else:
+            engine_status_badge = "⚪ Local Deterministic Engine (Zero-Key Mode)"
+
+        with st.expander(f"✨ AI Engine Settings: {engine_status_badge}", expanded=False):
             st.markdown("""
             <div style="font-size: 0.84rem; color: #475569; margin-bottom: 0.5rem; line-height: 1.4;">
-                Connect a <b>Google Gemini API Key</b> to enable dynamic generative AI reasoning and custom table generation for any arbitrary disaster scenario.
+                Connect an <b>xAI Grok (XAI_API_KEY)</b> or <b>Google Gemini API Key</b> to enable dynamic generative AI reasoning and custom table generation for any arbitrary disaster scenario.
                 <br>If no key is entered, VitalOptima runs using its built-in deterministic clinical physics model (100% offline).
             </div>
             """, unsafe_allow_html=True)
             k_col1, k_col2 = st.columns([3, 1])
             with k_col1:
                 entered_key = st.text_input(
-                    "Enter Gemini API Key:",
-                    value=active_gemini_key,
+                    "Enter xAI Grok or Gemini API Key:",
+                    value=active_gemini_key if has_key else "",
                     type="password",
-                    placeholder="AIzaSy...",
+                    placeholder="xai-... or AIzaSy...",
                     label_visibility="collapsed",
                     key="sim_gemini_key_input"
                 )
@@ -84,7 +92,7 @@ def show_simulator():
                     st.session_state["gemini_api_key"] = entered_key.strip()
                     st.success("API Key saved!")
                     st.rerun()
-            st.markdown("<div style='font-size: 0.78rem; color: #64748B; margin-top: 0.25rem;'>Get a free Gemini API key from <a href='https://aistudio.google.com/app/apikey' target='_blank' style='color: #1E60F2; font-weight: 600;'>Google AI Studio</a>.</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size: 0.78rem; color: #64748B; margin-top: 0.25rem;'>Add <code>XAI_API_KEY</code> to <code>.env</code> to activate xAI Grok. Zero-key mode runs our local hospital model.</div>", unsafe_allow_html=True)
 
         # Quick Example Inquiries Chips
         st.markdown("<p style='font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 0.4rem;'>💡 Recommended Stress Test Questions:</p>", unsafe_allow_html=True)
@@ -168,26 +176,33 @@ def show_simulator():
 
                 if r.get("success", False):
                     # Answer Card
+                    scen_name = r.get("scenario_name", "AI Crisis Scenario")
+                    params = r.get("parameters", {})
+                    p_surge = params.get("surge", 0)
+                    p_icu = params.get("icu_outage", 0)
+                    p_staff = params.get("staff_loss", 0)
+                    ans_summary = r.get("answer_summary", "")
+
                     st.markdown(f"""
                     <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1.1rem 1.25rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 <span style="font-size: 1.1rem;">🎛️</span>
-                                <span style="font-weight: 700; color: #0F172A; font-size: 0.98rem;">{r['scenario_name']}</span>
+                                <span style="font-weight: 700; color: #0F172A; font-size: 0.98rem;">{scen_name}</span>
                             </div>
                             <span style="background: #F1F5F9; color: #334155; font-size: 0.78rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
-                                Surge: +{r['parameters']['surge']}% | ICU Outage: {r['parameters']['icu_outage']}% | Staff Loss: {r['parameters']['staff_loss']}%
+                                Surge: +{p_surge}% | ICU Outage: {p_icu}% | Staff Loss: {p_staff}%
                             </span>
                         </div>
                         <div style="color: #334155; font-size: 0.92rem; line-height: 1.55;">
-                            {r['answer_summary']}
+                            {ans_summary}
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
 
                     # Dynamic 4 Precision Metric Cards Row Tailored to Query Intent
                     k1, k2, k3, k4 = st.columns(4)
-                    h_val = r["health_idx"]
+                    h_val = r.get("health_idx", 50.0)
                     intent = r.get("matched_intent", "overview")
 
                     with k1:
@@ -218,7 +233,7 @@ def show_simulator():
                             """, unsafe_allow_html=True)
 
                         with k3:
-                            n_def = r["nursing_deficit"]
+                            n_def = r.get("nursing_deficit", 0.0)
                             st.markdown(f"""
                             <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; min-height: 88px; padding: 0.65rem 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                                 <div style="font-size: 0.75rem; font-weight: 600; color: #64748B;">Nursing Deficit</div>
@@ -232,7 +247,7 @@ def show_simulator():
                             """, unsafe_allow_html=True)
 
                         with k4:
-                            ot_hours = int(r["nursing_deficit"] * 8)
+                            ot_hours = int(r.get("nursing_deficit", 0.0) * 8)
                             st.markdown(f"""
                             <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; min-height: 88px; padding: 0.65rem 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                                 <div style="font-size: 0.75rem; font-weight: 600; color: #64748B;">Overtime Mandate</div>
@@ -273,7 +288,7 @@ def show_simulator():
                             """, unsafe_allow_html=True)
 
                         with k4:
-                            c_depts = r["crit_depts"]
+                            c_depts = r.get("crit_depts", 0)
                             st.markdown(f"""
                             <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; min-height: 88px; padding: 0.65rem 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                                 <div style="font-size: 0.75rem; font-weight: 600; color: #64748B;">Saturated Units</div>
@@ -288,7 +303,7 @@ def show_simulator():
 
                     else:
                         with k2:
-                            b_def = r["total_bed_deficit"]
+                            b_def = r.get("total_bed_deficit", 0)
                             st.markdown(f"""
                             <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; min-height: 88px; padding: 0.65rem 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                                 <div style="font-size: 0.75rem; font-weight: 600; color: #64748B;">Total Bed Deficit</div>
@@ -302,7 +317,7 @@ def show_simulator():
                             """, unsafe_allow_html=True)
 
                         with k3:
-                            n_def = r["nursing_deficit"]
+                            n_def = r.get("nursing_deficit", 0.0)
                             st.markdown(f"""
                             <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; min-height: 88px; padding: 0.65rem 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                                 <div style="font-size: 0.75rem; font-weight: 600; color: #64748B;">Nursing Deficit</div>
@@ -316,7 +331,7 @@ def show_simulator():
                             """, unsafe_allow_html=True)
 
                         with k4:
-                            c_depts = r["crit_depts"]
+                            c_depts = r.get("crit_depts", 0)
                             st.markdown(f"""
                             <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; min-height: 88px; padding: 0.65rem 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                                 <div style="font-size: 0.75rem; font-weight: 600; color: #64748B;">Departments Critical</div>
@@ -371,27 +386,33 @@ def show_simulator():
                     act_col1, act_col2, _ = st.columns([2, 2, 2.5])
                     with act_col1:
                         if st.button("⚡ Apply to Interactive Workbench", key=f"apply_wb_{idx}", width="stretch", type="primary"):
-                            st.session_state["sim_surge_slider"] = r["parameters"]["surge"]
-                            st.session_state["sim_icu_slider"] = r["parameters"]["icu_outage"]
-                            st.session_state["sim_staff_slider"] = r["parameters"]["staff_loss"]
+                            p_dict = r.get("parameters", {})
+                            st.session_state["sim_surge_slider"] = p_dict.get("surge", 0)
+                            st.session_state["sim_icu_slider"] = p_dict.get("icu_outage", 0)
+                            st.session_state["sim_staff_slider"] = p_dict.get("staff_loss", 0)
                             st.session_state["sim_preset_select"] = "Custom Scenario"
                             st.success("✅ Parameters applied to workbench sliders! Check the 'Interactive Stress Workbench' tab.")
                             st.rerun()
 
                     with act_col2:
                         if st.button("💾 Log AI Simulation to PostgreSQL", key=f"save_pg_{idx}", width="stretch"):
+                            p_dict = r.get("parameters", {})
+                            p_surge = p_dict.get("surge", 0)
+                            p_icu = p_dict.get("icu_outage", 0)
+                            p_staff = p_dict.get("staff_loss", 0)
+                            scen_title = r.get("scenario_name", "AI Crisis Scenario")
                             sim_payload = {
-                                "total_crisis_occupancy": r["total_crisis_occ"],
-                                "total_bed_deficit": r["total_bed_deficit"],
-                                "nursing_deficit": r["nursing_deficit"],
-                                "critical_departments": r["crit_depts"],
+                                "total_crisis_occupancy": r.get("total_crisis_occ", 0),
+                                "total_bed_deficit": r.get("total_bed_deficit", 0),
+                                "nursing_deficit": r.get("nursing_deficit", 0),
+                                "critical_departments": r.get("crit_depts", 0),
                                 "nlq_prompt": q_text
                             }
                             ok = save_scenario(
-                                name=f"AI: {r['scenario_name']} (+{r['parameters']['surge']}%, {r['parameters']['icu_outage']}%, {r['parameters']['staff_loss']}%)",
-                                surge_pct=r["parameters"]["surge"],
-                                icu_reduction=r["parameters"]["icu_outage"],
-                                staff_loss=r["parameters"]["staff_loss"],
+                                name=f"AI: {scen_title} (+{p_surge}%, {p_icu}%, {p_staff}%)",
+                                surge_pct=p_surge,
+                                icu_reduction=p_icu,
+                                staff_loss=p_staff,
                                 results_json=json.dumps(sim_payload)
                             )
                             if ok:

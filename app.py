@@ -13,6 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from ui.styles import get_custom_css
 from ui.views.dashboard import show_dashboard
+from ui.views.ai_insights import show_ai_insights
 from ui.views.resource_mgmt import show_resource_mgmt
 from ui.views.demand_forecast import show_demand_forecast
 from ui.views.optimization import show_optimization
@@ -60,6 +61,7 @@ with st.sidebar:
     # Navigation Menu
     nav_options = [
         "Dashboard",
+        "AI Insights & Agent",
         "Resource Management",
         "Demand Forecasting",
         "Optimization",
@@ -71,6 +73,7 @@ with st.sidebar:
 
     icons = {
         "Dashboard": "📊",
+        "AI Insights & Agent": "🤖",
         "Resource Management": "🛏️",
         "Demand Forecasting": "📈",
         "Optimization": "⚙️",
@@ -108,6 +111,8 @@ active_view = st.session_state["current_page"]
 
 if active_view == "Dashboard":
     show_dashboard()
+elif active_view == "AI Insights & Agent":
+    show_ai_insights()
 elif active_view == "Resource Management":
     show_resource_mgmt()
 elif active_view == "Demand Forecasting":
