@@ -5,9 +5,12 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BASE_DIR
 DATA_DIR = BASE_DIR / "data"
 ASSETS_DIR = BASE_DIR / "assets"
-DB_PATH = BASE_DIR / "db" / "vitaloptima.db"
+DB_DIR = BASE_DIR / "db"
+DB_PATH = DB_DIR / "vitaloptima.db"
+ML_OUTPUTS_DIR = BASE_DIR / "ml_outputs"
 
 from datetime import datetime, timezone, timedelta
 

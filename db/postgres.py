@@ -350,9 +350,11 @@ def load_census_dataset() -> pd.DataFrame:
     df = fetch_table_df("hospital_census_daily", limit=1000)
     if not df.empty and len(df) >= 300:
         return df
-    csv_path = PROJECT_ROOT / "data" / "hospital_census_daily.csv"
-    if csv_path.exists():
-        return pd.read_csv(csv_path)
+    data_dir = PROJECT_ROOT / "data"
+    for fname in ["hospital_census_daily.csv", "hospital_daily_data.csv"]:
+        csv_path = data_dir / fname
+        if csv_path.exists():
+            return pd.read_csv(csv_path)
     return pd.DataFrame()
 
 def load_department_resources_dataset() -> pd.DataFrame:
@@ -360,9 +362,11 @@ def load_department_resources_dataset() -> pd.DataFrame:
     df = fetch_table_df("department_resources", limit=100)
     if not df.empty and len(df) >= 5:
         return df
-    csv_path = PROJECT_ROOT / "data" / "department_resources.csv"
-    if csv_path.exists():
-        return pd.read_csv(csv_path)
+    data_dir = PROJECT_ROOT / "data"
+    for fname in ["department_resources.csv", "hospital_resources.csv"]:
+        csv_path = data_dir / fname
+        if csv_path.exists():
+            return pd.read_csv(csv_path)
     return pd.DataFrame()
 
 def load_staffing_roster_dataset() -> pd.DataFrame:
@@ -370,9 +374,11 @@ def load_staffing_roster_dataset() -> pd.DataFrame:
     df = fetch_table_df("staffing_roster", limit=1000)
     if not df.empty and len(df) >= 10:
         return df
-    csv_path = PROJECT_ROOT / "data" / "staffing_roster.csv"
-    if csv_path.exists():
-        return pd.read_csv(csv_path)
+    data_dir = PROJECT_ROOT / "data"
+    for fname in ["staffing_roster.csv", "staff_availability.csv"]:
+        csv_path = data_dir / fname
+        if csv_path.exists():
+            return pd.read_csv(csv_path)
     return pd.DataFrame()
 
 def load_inventory_supplies_dataset() -> pd.DataFrame:
@@ -380,7 +386,10 @@ def load_inventory_supplies_dataset() -> pd.DataFrame:
     df = fetch_table_df("inventory_supplies", limit=2000)
     if not df.empty and len(df) >= 10:
         return df
-    csv_path = PROJECT_ROOT / "data" / "inventory_supplies.csv"
-    if csv_path.exists():
-        return pd.read_csv(csv_path)
+    data_dir = PROJECT_ROOT / "data"
+    for fname in ["inventory_supplies.csv", "medical_inventory.csv"]:
+        csv_path = data_dir / fname
+        if csv_path.exists():
+            return pd.read_csv(csv_path)
     return pd.DataFrame()
+
