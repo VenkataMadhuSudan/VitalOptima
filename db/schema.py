@@ -169,3 +169,103 @@ class ScenarioSimulation(Base):
 
     def __repr__(self):
         return f"<ScenarioSimulation(id={self.id}, name='{self.name}', surge={self.surge_pct}%)>"
+
+
+class BloodBankInventory(Base):
+    """Hospital blood bank backup, component reserves, and transfusion telemetry."""
+    __tablename__ = "blood_bank_inventory"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    blood_group = Column(String(50), nullable=False, index=True)
+    component_type = Column(String(100), nullable=False, index=True)
+    units_available = Column(Integer, nullable=False, default=0)
+    units_reserved = Column(Integer, nullable=False, default=0)
+    net_available_units = Column(Integer, nullable=False, default=0)
+    critical_threshold = Column(Integer, nullable=False, default=0)
+    daily_consumption = Column(Float, nullable=False, default=0.0)
+    days_of_supply = Column(Float, nullable=False, default=0.0)
+    shelf_life_days = Column(Integer, nullable=False, default=0)
+    storage_temp = Column(String(50), nullable=False)
+    rh_factor = Column(String(20), nullable=False)
+    status = Column(String(50), nullable=False)
+
+    def __repr__(self):
+        return f"<BloodBankInventory(group='{self.blood_group}', component='{self.component_type}', available={self.units_available})>"
+
+
+class User(Base):
+    """System accounts for RBAC authentication and role management."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(100), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=False)
+    salt = Column(String(100), nullable=False)
+    role = Column(String(50), nullable=False, default="ADMISSION_OFFICER")  # "ADMIN" or "ADMISSION_OFFICER"
+    full_name = Column(String(150), nullable=False)
+    department = Column(String(100), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_login = Column(DateTime, nullable=True)
+
+    def __repr__(self):
+        return f"<User(username='{self.username}', role='{self.role}')>"
+
+
+class PatientAdmission(Base):
+    """Database-backed hospital patient admission records, bed allocations, and discharge lifecycles."""
+    __tablename__ = "patient_admissions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    admission_id = Column(String(50), unique=True, nullable=False, index=True)
+    patient_id = Column(String(50), nullable=False, index=True)
+    patient_name = Column(String(150), nullable=False)
+    age = Column(Integer, nullable=True)
+    gender = Column(String(20), nullable=True)
+    department = Column(String(100), nullable=False, index=True)
+    admission_type = Column(String(50), nullable=False)  # "Emergency", "Elective", "Urgent", "Transfer"
+    status = Column(String(50), nullable=False, default="Admitted", index=True)  # "Admitted", "Discharged", "Transferred"
+    bed_number = Column(String(50), nullable=True, index=True)
+    admitted_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    discharged_at = Column(DateTime, nullable=True)
+    admitted_by = Column(String(100), nullable=False)
+    discharged_by = Column(String(100), nullable=True)
+    clinical_notes = Column(Text, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<PatientAdmission(id='{self.admission_id}', patient='{self.patient_name}', bed='{self.bed_number}', status='{self.status}')>"
+
+
+class AuditLog(Base):
+    """Centralized audit trail for security events, admissions, role modifications, and operational actions."""
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True, nullable=False)
+    actor_username = Column(String(100), nullable=False, index=True)
+    actor_role = Column(String(50), nullable=False)
+    action = Column(String(100), nullable=False, index=True)  # e.g., "admissions.create", "admissions.discharge"
+    target_id = Column(String(100), nullable=True)
+    target_type = Column(String(50), nullable=True)
+    status = Column(String(50), nullable=False, default="SUCCESS")  # "SUCCESS", "DENIED", "FAILED"
+    details = Column(Text, nullable=True)
+
+    def __repr__(self):
+        return f"<AuditLog(actor='{self.actor_username}', action='{self.action}', status='{self.status}')>"
+
+
+class HospitalDataSync(Base):
+    """Lightweight cross-user synchronization telemetry tracking table versions and update timestamps."""
+    __tablename__ = "hospital_data_sync"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    entity_type = Column(String(50), unique=True, nullable=False, index=True)  # "admissions", "resources"
+    version = Column(Integer, default=1, nullable=False)
+    last_updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_by = Column(String(100), nullable=True)
+
+    def __repr__(self):
+        return f"<HospitalDataSync(entity='{self.entity_type}', version={self.version})>"
+
+

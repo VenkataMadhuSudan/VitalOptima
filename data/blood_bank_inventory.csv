@@ -1,0 +1,24 @@
+blood_group,component_type,units_available,units_reserved,net_available_units,critical_threshold,daily_consumption,days_of_supply,shelf_life_days,storage_temp,rh_factor,status
+O-,Packed Red Blood Cells (PRBC),4,2,2,10,3.0,1.3,28,2°C to 6°C,Negative,🔴 Critical Shortage
+O+,Packed Red Blood Cells (PRBC),24,6,18,15,6.5,3.7,34,2°C to 6°C,Positive,✅ Adequate Buffer
+A-,Packed Red Blood Cells (PRBC),5,2,3,8,2.0,2.5,30,2°C to 6°C,Negative,⚠️ Low Reserve
+A+,Packed Red Blood Cells (PRBC),28,7,21,14,5.0,5.6,35,2°C to 6°C,Positive,✅ Adequate Buffer
+B-,Packed Red Blood Cells (PRBC),4,1,3,6,1.5,2.7,29,2°C to 6°C,Negative,⚠️ Low Reserve
+B+,Packed Red Blood Cells (PRBC),22,5,17,12,4.0,5.5,36,2°C to 6°C,Positive,✅ Adequate Buffer
+AB-,Packed Red Blood Cells (PRBC),3,1,2,5,1.0,3.0,32,2°C to 6°C,Negative,⚠️ Low Reserve
+AB+,Packed Red Blood Cells (PRBC),12,3,9,8,2.0,6.0,38,2°C to 6°C,Positive,⭐ Optimal Stock
+O-,Fresh Frozen Plasma (FFP),8,2,6,10,2.0,4.0,340,-18°C or colder,Negative,⚠️ Low Reserve
+O+,Fresh Frozen Plasma (FFP),18,4,14,12,3.5,5.1,350,-18°C or colder,Positive,✅ Adequate Buffer
+A-,Fresh Frozen Plasma (FFP),6,1,5,6,1.5,4.0,320,-18°C or colder,Negative,✅ Adequate Buffer
+A+,Fresh Frozen Plasma (FFP),16,3,13,10,3.0,5.3,330,-18°C or colder,Positive,✅ Adequate Buffer
+B-,Fresh Frozen Plasma (FFP),5,1,4,5,1.0,5.0,310,-18°C or colder,Negative,✅ Adequate Buffer
+B+,Fresh Frozen Plasma (FFP),14,2,12,10,2.5,5.6,345,-18°C or colder,Positive,✅ Adequate Buffer
+AB-,Fresh Frozen Plasma (FFP),8,2,6,8,1.5,5.3,360,-18°C or colder,Negative,✅ Adequate Buffer
+AB+,Fresh Frozen Plasma (FFP),15,3,12,8,2.0,7.5,365,-18°C or colder,Positive,⭐ Optimal Stock
+All Groups (Random),Platelet Concentrate (RDP),18,5,13,15,4.0,4.5,4,20°C to 24°C agitated,Universal,✅ Adequate Buffer
+All Groups (Apheresis),Single Donor Platelets (SDP),6,2,4,5,1.5,4.0,5,20°C to 24°C agitated,Universal,✅ Adequate Buffer
+All Groups,Cryoprecipitate AHF,24,6,18,15,3.0,8.0,300,-18°C or colder,Universal,⭐ Optimal Stock
+O+,Whole Blood (Emergency Trauma Unit),10,4,6,8,2.0,5.0,21,2°C to 6°C,Positive,✅ Adequate Buffer
+O-,Whole Blood (Universal Trauma Pack),3,2,1,6,1.5,2.0,18,2°C to 6°C,Negative,🔴 Critical Shortage
+A+,Whole Blood (Emergency Trauma Unit),8,2,6,6,1.5,5.3,25,2°C to 6°C,Positive,✅ Adequate Buffer
+B+,Whole Blood (Emergency Trauma Unit),6,1,5,5,1.0,6.0,22,2°C to 6°C,Positive,✅ Adequate Buffer

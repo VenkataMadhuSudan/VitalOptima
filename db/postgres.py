@@ -24,7 +24,8 @@ load_dotenv(PROJECT_ROOT / ".env")
 from db.schema import (
     Base, DepartmentResource, HospitalCensusDaily, StaffingRoster,
     InventorySupply, DemandForecastHourly, DecisionLog, SystemAlert, RecentActivity,
-    ScenarioSimulation
+    ScenarioSimulation, BloodBankInventory, User, PatientAdmission, AuditLog,
+    HospitalDataSync
 )
 
 _ENGINE = None
@@ -60,6 +61,10 @@ def get_engine():
                 connect_args={"connect_timeout": 10}
             )
             _SESSION_FACTORY = sessionmaker(bind=_ENGINE)
+            try:
+                Base.metadata.create_all(_ENGINE)
+            except Exception as e_create:
+                print(f"[PostgreSQL] Warning auto-creating tables: {e_create}")
         except Exception as e:
             print(f"[PostgreSQL] Failed to create engine: {e}")
             return None
@@ -173,6 +178,14 @@ def sync_csvs_to_postgres():
             conn.execute(text("TRUNCATE TABLE demand_forecast_hourly RESTART IDENTITY CASCADE;"))
             df_fc.to_sql("demand_forecast_hourly", conn, if_exists="append", index=False)
             results["demand_forecast_hourly"] = len(df_fc)
+
+        # Table 5b: Blood Bank Inventory Backup
+        blood_csv = data_dir / "blood_bank_inventory.csv"
+        if blood_csv.exists():
+            df_blood = pd.read_csv(blood_csv)
+            conn.execute(text("TRUNCATE TABLE blood_bank_inventory RESTART IDENTITY CASCADE;"))
+            df_blood.to_sql("blood_bank_inventory", conn, if_exists="append", index=False)
+            results["blood_bank_inventory"] = len(df_blood)
 
         # Table 6: Seed Default Decision Log if empty
         check_dec = conn.execute(text("SELECT COUNT(*) FROM decision_log;")).scalar()
@@ -388,6 +401,18 @@ def load_inventory_supplies_dataset() -> pd.DataFrame:
         return df
     data_dir = PROJECT_ROOT / "data"
     for fname in ["inventory_supplies.csv", "medical_inventory.csv"]:
+        csv_path = data_dir / fname
+        if csv_path.exists():
+            return pd.read_csv(csv_path)
+    return pd.DataFrame()
+
+def load_blood_bank_dataset() -> pd.DataFrame:
+    """Loads hospital blood bank backup from PostgreSQL if available, otherwise from CSV."""
+    df = fetch_table_df("blood_bank_inventory", limit=500)
+    if not df.empty and len(df) >= 5:
+        return df
+    data_dir = PROJECT_ROOT / "data"
+    for fname in ["blood_bank_inventory.csv", "blood_inventory.csv"]:
         csv_path = data_dir / fname
         if csv_path.exists():
             return pd.read_csv(csv_path)

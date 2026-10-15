@@ -11,6 +11,9 @@ from datetime import datetime
 from db.postgres import run_custom_query, fetch_table_df, test_connection
 
 SAMPLE_PROMPT_CHIPS = [
+    "🩸 How much blood is available in our blood bank reserves?",
+    "🚨 Which blood groups have critical shortages or low stock?",
+    "🅾️ Show O negative universal donor blood availability",
     "📈 How many patients arrived on Mondays?",
     "🚨 Which medical supplies are running low or out of stock?",
     "🛏️ Which hospital departments currently have highest occupancy?",
@@ -24,6 +27,53 @@ SAMPLE_PROMPT_CHIPS = [
     "📊 Compare emergency arrivals vs inpatient admissions",
     "🏥 Show general bed and ICU bed capacity for Pediatrics"
 ]
+
+# Blood group & component entity mappings
+BLOOD_GROUPS = {
+    "o-": "O-",
+    "o negative": "O-",
+    "o neg": "O-",
+    "o+": "O+",
+    "o positive": "O+",
+    "o pos": "O+",
+    "a-": "A-",
+    "a negative": "A-",
+    "a neg": "A-",
+    "a+": "A+",
+    "a positive": "A+",
+    "a pos": "A+",
+    "b-": "B-",
+    "b negative": "B-",
+    "b neg": "B-",
+    "b+": "B+",
+    "b positive": "B+",
+    "b pos": "B+",
+    "ab-": "AB-",
+    "ab negative": "AB-",
+    "ab neg": "AB-",
+    "ab+": "AB+",
+    "ab positive": "AB+",
+    "ab pos": "AB+",
+    "universal donor": "O-",
+    "universal recipient": "AB+"
+}
+
+BLOOD_COMPONENTS = {
+    "prbc": "PRBC",
+    "packed red": "PRBC",
+    "red blood cells": "PRBC",
+    "red cells": "PRBC",
+    "ffp": "FFP",
+    "plasma": "FFP",
+    "fresh frozen plasma": "FFP",
+    "platelet": "Platelet",
+    "platelets": "Platelet",
+    "rdp": "Platelet",
+    "sdp": "Platelet",
+    "cryo": "Cryoprecipitate",
+    "cryoprecipitate": "Cryoprecipitate",
+    "whole blood": "Whole Blood"
+}
 
 # Domain synonym & entity dictionaries
 DEPARTMENTS = {
@@ -121,6 +171,7 @@ Hospital Schema:
 5. decision_log(id INT, timestamp TIMESTAMP, category VARCHAR, decision VARCHAR, recommendation TEXT, modified_details TEXT, administrator VARCHAR, rationale TEXT)
 6. system_alerts(id INT, timestamp TIMESTAMP, category VARCHAR, severity VARCHAR, title VARCHAR, acknowledged INT)
 7. scenarios(id INT, timestamp TIMESTAMP, name VARCHAR, surge_pct NUMERIC, icu_reduction NUMERIC, staff_loss NUMERIC, results_json TEXT)
+8. blood_bank_inventory(id INT, blood_group VARCHAR, component_type VARCHAR, units_available INT, units_reserved INT, net_available_units INT, critical_threshold INT, daily_consumption NUMERIC, days_of_supply NUMERIC, shelf_life_days INT, storage_temp VARCHAR, rh_factor VARCHAR, status VARCHAR)
 
 Return strictly valid JSON matching this schema:
 {{
@@ -215,6 +266,8 @@ def process_natural_language_query(user_text: str, api_key: str = None):
     detected_day = _extract_day_of_week(query_clean)
     detected_shift = _extract_shift(query_clean)
     detected_role = _extract_staff_role(query_clean)
+    detected_blood_group = _extract_blood_group(query_clean)
+    detected_blood_comp = _extract_blood_component(query_clean)
     is_weekend = "weekend" in query_clean
     is_weekday = "weekday" in query_clean
     has_total_intent = any(w in query_clean for w in ["total", "sum", "overall", "combined", "how many", "all together"])
@@ -287,7 +340,100 @@ ORDER BY crisis_occupancy_pct DESC;"""
         summary = f"Capacity stress evaluation for a **+{int(surge_pct)}% patient volume increase** across **{dept_scope_name}**."
 
     # =========================================================================
-    # ROUTE 1: INVENTORY & MEDICAL CONSUMABLES
+    # ROUTE 1A: HOSPITAL BLOOD BANK & TRANSFUSION BACKUP RESERVES
+    # =========================================================================
+    elif any(k in query_clean for k in ["blood", "prbc", "plasma", "platelet", "platelets", "cryo", "transfusion", "blood bank", "blood group", "blood type", "o negative", "o-", "o+", "a+", "b+", "ab-", "universal donor", "rh factor"]):
+        table_name = "blood_bank_inventory"
+
+        # Sub-intent: Specific blood group requested (e.g. O-, O+, A+, etc.)
+        if detected_blood_group:
+            sql = f"""SELECT 
+    blood_group, 
+    component_type, 
+    units_available, 
+    units_reserved, 
+    net_available_units, 
+    critical_threshold, 
+    daily_consumption, 
+    days_of_supply, 
+    shelf_life_days, 
+    storage_temp, 
+    status 
+FROM blood_bank_inventory 
+WHERE blood_group ILIKE '%{detected_blood_group}%'
+ORDER BY units_available ASC;"""
+            summary = f"Blood bank backup reserves and component status for **Blood Group {detected_blood_group}**."
+
+        # Sub-intent: Specific component requested (e.g. Platelets, Plasma, PRBC)
+        elif detected_blood_comp:
+            sql = f"""SELECT 
+    blood_group, 
+    component_type, 
+    units_available, 
+    units_reserved, 
+    net_available_units, 
+    critical_threshold, 
+    daily_consumption, 
+    days_of_supply, 
+    shelf_life_days, 
+    storage_temp, 
+    status 
+FROM blood_bank_inventory 
+WHERE component_type ILIKE '%{detected_blood_comp}%'
+ORDER BY units_available ASC;"""
+            summary = f"Blood bank backup units for **{detected_blood_comp}** components across hospital blood groups."
+
+        # Sub-intent: Critical deficit or low stock
+        elif any(k in query_clean for k in ["shortage", "deficit", "low", "critical", "insufficient", "depleted", "emergency"]):
+            sql = """SELECT 
+    blood_group, 
+    component_type, 
+    units_available, 
+    units_reserved, 
+    net_available_units, 
+    critical_threshold, 
+    daily_consumption, 
+    days_of_supply, 
+    status 
+FROM blood_bank_inventory 
+WHERE units_available <= critical_threshold OR status ILIKE '%Critical%' OR status ILIKE '%Low%'
+ORDER BY units_available ASC;"""
+            summary = "Blood groups and components currently below safety critical thresholds or on low reserve."
+
+        # Sub-intent: Component aggregate breakdown
+        elif has_total_intent and any(k in query_clean for k in ["by component", "per component", "each component"]):
+            sql = """SELECT 
+    component_type, 
+    SUM(units_available) AS total_units_available, 
+    SUM(units_reserved) AS total_units_reserved, 
+    SUM(net_available_units) AS net_unreserved_units, 
+    ROUND(CAST(AVG(days_of_supply) AS NUMERIC), 1) AS avg_days_of_supply,
+    COUNT(*) AS blood_group_varieties
+FROM blood_bank_inventory 
+GROUP BY component_type
+ORDER BY total_units_available DESC;"""
+            summary = "Aggregate blood bank reserves summarized by clinical component type."
+
+        # Default: Full blood bank inventory overview
+        else:
+            sql = """SELECT 
+    blood_group, 
+    component_type, 
+    units_available, 
+    units_reserved, 
+    net_available_units, 
+    critical_threshold, 
+    daily_consumption, 
+    days_of_supply, 
+    shelf_life_days, 
+    storage_temp, 
+    status 
+FROM blood_bank_inventory 
+ORDER BY units_available ASC;"""
+            summary = "Hospital-wide blood bank backup reserves, cross-matched units, and component availability."
+
+    # =========================================================================
+    # ROUTE 1B: INVENTORY & MEDICAL CONSUMABLES
     # =========================================================================
     elif any(k in query_clean for k in ["inventory", "supplies", "supply", "stock", "consumable", "reorder", "n95", "mask", "glove", "ppe", "saline", "lead time", "burn rate"]):
         table_name = "inventory_supplies"
@@ -893,6 +1039,23 @@ def _extract_staff_role(text: str) -> str:
     return ""
 
 
+def _extract_blood_group(text: str) -> str:
+    """Extracts blood group entity (e.g. O-, A+, AB-, O negative)."""
+    # Try exact multi-word first
+    for key, val in sorted(BLOOD_GROUPS.items(), key=lambda x: -len(x[0])):
+        if re.search(r'(?:\b|\s)' + re.escape(key) + r'(?:\b|\s|$)', text):
+            return val
+    return ""
+
+
+def _extract_blood_component(text: str) -> str:
+    """Extracts blood component entity (e.g. Platelets, FFP, PRBC, Cryo)."""
+    for key, val in sorted(BLOOD_COMPONENTS.items(), key=lambda x: -len(x[0])):
+        if re.search(r'\b' + re.escape(key) + r'\b', text):
+            return val
+    return ""
+
+
 def _extract_limit(text: str, default: int = 10) -> int:
     """Extracts integer limit from 'top 5', 'limit 20', 'first 10'."""
     m = re.search(r'\b(?:top|first|limit|latest)\s+(\d+)\b', text)
@@ -1019,6 +1182,22 @@ def _generate_insights(df: pd.DataFrame, query_clean: str) -> list:
     if "hospital_avg_length_of_stay_days" in cols:
         los = df["hospital_avg_length_of_stay_days"].iloc[0]
         insights.append(f"⏱️ Inpatient mean length of stay: **{los} days** per admitted patient.")
+
+    # Insight 9: Blood Bank & Transfusion Backup Reserves
+    if "units_available" in cols and ("blood_group" in cols or "component_type" in cols):
+        tot_units = int(df["units_available"].sum())
+        crit_groups = df[df["status"].str.contains("Critical", case=False, na=False)] if "status" in cols else pd.DataFrame()
+        low_groups = df[df["status"].str.contains("Low", case=False, na=False)] if "status" in cols else pd.DataFrame()
+
+        insights.append(f"🩸 Total blood backup in this view: **{tot_units} units** across active blood groups and components.")
+        if not crit_groups.empty:
+            crit_names = ", ".join(crit_groups["blood_group"].unique().tolist())
+            insights.append(f"🚨 **Critical Blood Shortage**: Immediate donor recall needed for blood group(s): **{crit_names}**.")
+        elif not low_groups.empty:
+            low_names = ", ".join(low_groups["blood_group"].unique().tolist())
+            insights.append(f"⚠️ **Low Blood Reserves**: Tight buffer detected for: **{low_names}** (approaching safety reorder limits).")
+        else:
+            insights.append("✅ Blood backup reserves maintain adequate clinical buffers across selected components.")
 
     # Default insight if empty
     if not insights:

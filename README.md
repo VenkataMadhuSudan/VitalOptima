@@ -142,3 +142,25 @@ Open your browser at `http://localhost:8501` to view the command dashboard.
 1. **Human-in-the-Loop**: No resource deployment is automated without administrative approval.
 2. **Transparent Trade-offs**: Feature importances (diurnal cycles, lag terms) and solver slack variables are exposed.
 3. **Safety Fallbacks**: Infeasibility fallbacks guarantee safe overflow ward routing during catastrophic surges.
+
+---
+
+## ✨ AI Dashboard Summarizer ("Hospital Insights")
+
+VitalOptima includes an enterprise-grade **AI Dashboard Summarizer** accessible via a floating assistant button (`✨`) pinned to the bottom-right corner of the administrator interface.
+
+### Key Capabilities:
+- **Instant Operational Digest**: Explains live dashboard metrics in plain English without requiring manual interpretation of charts or tables.
+- **7-Part Structured Analysis**:
+  - **Overall Status**: Concise evaluation of current hospital resilience and acute bottlenecks.
+  - **Key Insights**: 3–5 bullet points detailing bed utilization, critical care margins, shift staffing coverage, OR schedules, and peak arrival forecasts.
+  - **Attention Required**: Prioritized operational risk items tagged with clear severity badges (`Critical`, `High`, `Medium`, `Low`) based on configured thresholds.
+  - **Recommended Actions**: 2–4 practical administrative actions grounded in mathematical optimization and telemetry evidence (e.g. nurse float pool reallocation, discharge audits).
+  - **Trends & Forecasts**: Directional arrival trajectory, peak arrival window (15:00 IST), and 95% confidence intervals from the Random Forest model.
+  - **Positive Observations**: Highlights stable wards and well-resourced departments.
+  - **Data Provenance & Freshness**: Discloses 365-day census records, 30-day consumable telemetry, and real-time IST clock.
+- **Dual AI & Deterministic Architecture**:
+  - **LLM-Powered Mode**: Supports Google Gemini, Anthropic Claude, or OpenAI GPT-4o with zero patient PII transmitted.
+  - **Rule-Based Offline Fallback**: Fully deterministic, mathematical rule-based summarizer that operates instantly with 100% reliability even if no external API key is configured or if network timeouts occur.
+- **Contextual Follow-Up Q&A**: Parameter-safe natural language queries (e.g., *"Which department needs the most attention?"*, *"Why is ICU utilization high?"*).
+- **Executive Actions**: Live metric refresh, instant clean text clipboard copy, and responsive slide-over drawer UI.

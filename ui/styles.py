@@ -1080,6 +1080,47 @@ def get_custom_css(theme="Light Mode"):
             text-align: center !important;
         }
     }
+    /* Floating AI Assistant Trigger & Insights Drawer */
+    div[class*="st-key-btn_floating_ai_trigger"] button,
+    div[data-testid*="btn_floating_ai_trigger"] button {
+        position: fixed !important;
+        bottom: 24px !important;
+        right: 24px !important;
+        width: 58px !important;
+        height: 58px !important;
+        min-height: 58px !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg, #1E60F2 0%, #1040B0 100%) !important;
+        color: #FFFFFF !important;
+        border: 2px solid rgba(255, 255, 255, 0.4) !important;
+        box-shadow: 0 10px 25px -4px rgba(30, 96, 242, 0.5), 0 6px 12px -2px rgba(15, 23, 42, 0.25) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1.45rem !important;
+        cursor: pointer !important;
+        z-index: 9990 !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    div[class*="st-key-btn_floating_ai_trigger"] button:hover {
+        transform: scale(1.1) translateY(-3px) !important;
+        box-shadow: 0 16px 32px -4px rgba(30, 96, 242, 0.65) !important;
+    }
+    div[class*="st-key-panel_ai_summary_drawer"] {
+        position: fixed !important;
+        bottom: 92px !important;
+        right: 24px !important;
+        width: 430px !important;
+        max-width: calc(100vw - 36px) !important;
+        max-height: 78vh !important;
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.28) !important;
+        z-index: 9991 !important;
+        overflow-y: auto !important;
+        padding: 0.95rem 1rem !important;
+    }
     </style>
     """
     css = css.replace("VAR_BODY_BG", body_bg)

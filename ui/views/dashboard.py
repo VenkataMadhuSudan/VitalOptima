@@ -26,6 +26,8 @@ from ui.components import (
 from datetime import timedelta
 from config import get_ist_now
 from db.database import log_decision
+from services.auth_service import get_current_user, require_permission
+from services.admission_service import get_live_bed_metrics
 
 
 @st.dialog("🚨 Hospital Incident Alerts & Active Constraints", width="large")
@@ -560,29 +562,55 @@ def render_interactive_whatif_simulator_card():
 
 
 
-def show_dashboard():
-    # 1. Top Navigation Bar with live IST timestamp & clinical shift indicator
-    render_top_nav(HOSPITAL_NAME, get_system_timestamp(), ADMIN_INITIALS, ADMIN_USER)
+@st.fragment(run_every=8)
+def render_live_dashboard_kpis():
+    """
+    Live auto-refreshing KPI fragment that queries authoritative database metrics every 8 seconds.
+    Ensures that admissions and discharges made by Admission Officers update the Admin dashboard
+    within 8-15 seconds automatically without full page reload.
+    """
+    metrics = get_live_bed_metrics()
+    gen_occ = metrics.get("general_occupied", GENERAL_BEDS_OCCUPIED)
+    gen_tot = metrics.get("general_total", GENERAL_BEDS_TOTAL)
+    gen_rate = metrics.get("general_rate", GENERAL_BEDS_RATE)
+    gen_avail = metrics.get("general_available", GENERAL_BEDS_AVAILABLE)
 
-    # 2. Dynamic Time-of-Day Greeting & Hospital Exterior Header
-    greeting_title, greeting_subtitle = get_greeting(ADMIN_USER)
-    render_welcome_header(ASSETS_DIR / "hospital_building.jpg", title=greeting_title, subtitle=greeting_subtitle)
+    icu_occ = metrics.get("icu_occupied", ICU_BEDS_OCCUPIED)
+    icu_tot = metrics.get("icu_total", ICU_BEDS_TOTAL)
+    icu_rate = metrics.get("icu_rate", ICU_BEDS_RATE)
+    icu_avail = metrics.get("icu_available", ICU_BEDS_AVAILABLE)
 
-    # 3. Top Row - 4 Precision Compact KPI Cards
+    sync_v = metrics.get("sync_version", 1)
+    sync_time = metrics.get("last_updated", "")
+
+    # Live synchronization status tag
+    st.html(f"""
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.35rem 0.75rem; border-radius: 6px; margin-bottom: 0.65rem; font-size: 0.75rem; color: #475569;">
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <span style="color: #10B981; font-size: 0.85rem;">●</span>
+            <b>Live Operational Metrics:</b> Dynamic DB Sync (Cycle #{sync_v} • Updated: {sync_time or 'Just now'})
+        </div>
+        <div style="color: #64748B;">
+            Auto-refresh active (8s polling) • Zero manual reload required
+        </div>
+    </div>
+    """)
+
+    # Top Row - 4 Precision Compact KPI Cards
     k1, k2, k3, k4 = st.columns(4)
     with k1:
         st.html(render_kpi_card_compact(
             "🛏️", "General Beds",
-            GENERAL_BEDS_OCCUPIED, GENERAL_BEDS_TOTAL, "Occupied",
-            GENERAL_BEDS_RATE, "#3B82F6",
-            GENERAL_BEDS_AVAILABLE, "available", "#10B981"
+            gen_occ, gen_tot, "Occupied",
+            gen_rate, "#3B82F6",
+            gen_avail, "available", "#10B981"
         ))
     with k2:
         st.html(render_kpi_card_compact(
             "🫀", "ICU Beds",
-            ICU_BEDS_OCCUPIED, ICU_BEDS_TOTAL, "Occupied",
-            ICU_BEDS_RATE, "#8B5CF6",
-            ICU_BEDS_AVAILABLE, "available", "#10B981"
+            icu_occ, icu_tot, "Occupied",
+            icu_rate, "#8B5CF6",
+            icu_avail, "available", "#10B981"
         ))
     with k3:
         st.html(render_kpi_card_compact(
@@ -598,6 +626,32 @@ def show_dashboard():
             OR_RATE, "#06B6D4",
             OR_AVAILABLE_SLOTS, "available", "#10B981"
         ))
+
+
+def show_dashboard():
+    # Enforce authorization
+    user = get_current_user()
+    if user:
+        try:
+            require_permission("analytics.view", user)
+        except PermissionError as e:
+            st.error(f"⛔ {str(e)}")
+            return
+        user_name = user.get("full_name", ADMIN_USER)
+        user_initials = user.get("username", ADMIN_INITIALS)[:2].upper()
+    else:
+        user_name = ADMIN_USER
+        user_initials = ADMIN_INITIALS
+
+    # 1. Top Navigation Bar with live IST timestamp & clinical shift indicator
+    render_top_nav(HOSPITAL_NAME, get_system_timestamp(), user_initials, user_name)
+
+    # 2. Dynamic Time-of-Day Greeting & Hospital Exterior Header
+    greeting_title, greeting_subtitle = get_greeting(user_name)
+    render_welcome_header(ASSETS_DIR / "hospital_building.jpg", title=greeting_title, subtitle=greeting_subtitle)
+
+    # 3. Top Row - Live Auto-Refreshing KPI Fragment
+    render_live_dashboard_kpis()
 
     # 4. Continuous Two-Column Layout (eliminating 400px empty chasm and balancing left vs right)
     col_main_left, col_main_right = st.columns([6.7, 3.3], gap="medium")

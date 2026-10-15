@@ -924,3 +924,6 @@ def render_footer():
         </div>
     </div>
     """)
+
+
+from ui.ai_summary_panel import render_floating_ai_assistant

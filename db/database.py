@@ -112,6 +112,191 @@ def init_db():
             initial_decisions
         )
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS blood_bank_inventory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        blood_group TEXT NOT NULL,
+        component_type TEXT NOT NULL,
+        units_available INTEGER NOT NULL DEFAULT 0,
+        units_reserved INTEGER NOT NULL DEFAULT 0,
+        net_available_units INTEGER NOT NULL DEFAULT 0,
+        critical_threshold INTEGER NOT NULL DEFAULT 0,
+        daily_consumption REAL NOT NULL DEFAULT 0.0,
+        days_of_supply REAL NOT NULL DEFAULT 0.0,
+        shelf_life_days INTEGER NOT NULL DEFAULT 0,
+        storage_temp TEXT NOT NULL,
+        rh_factor TEXT NOT NULL,
+        status TEXT NOT NULL
+    )
+    """)
+
+    cursor.execute("SELECT COUNT(*) FROM blood_bank_inventory")
+    if cursor.fetchone()[0] == 0:
+        csv_path = PROJECT_ROOT / "data" / "blood_bank_inventory.csv"
+        if csv_path.exists():
+            import pandas as pd
+            df_b = pd.read_csv(csv_path)
+            for _, r in df_b.iterrows():
+                cursor.execute("""
+                    INSERT INTO blood_bank_inventory (
+                        blood_group, component_type, units_available, units_reserved,
+                        net_available_units, critical_threshold, daily_consumption,
+                        days_of_supply, shelf_life_days, storage_temp, rh_factor, status
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    str(r['blood_group']), str(r['component_type']), int(r['units_available']),
+                    int(r['units_reserved']), int(r['net_available_units']), int(r['critical_threshold']),
+                    float(r['daily_consumption']), float(r['days_of_supply']), int(r['shelf_life_days']),
+                    str(r['storage_temp']), str(r['rh_factor']), str(r['status'])
+                ))
+
+    # --- 1. Users Table (RBAC) ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        salt TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'ADMISSION_OFFICER',
+        full_name TEXT NOT NULL,
+        department TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        last_login TEXT
+    )
+    """)
+
+    cursor.execute("SELECT COUNT(*) FROM users")
+    if cursor.fetchone()[0] == 0:
+        from services.auth_service import hash_password
+        admin_hash, admin_salt = hash_password("Admin@Vital2026!")
+        officer_hash, officer_salt = hash_password("Admit@Vital2026!")
+        now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+        default_users = [
+            ("admin", admin_hash, admin_salt, "ADMIN", "Dr. Rajesh Sharma (Medical Director)", "Hospital Administration", 1, now_ts),
+            ("admit_officer", officer_hash, officer_salt, "ADMISSION_OFFICER", "Priya Nair (Lead Admission Officer)", "Central Admissions & Triage", 1, now_ts)
+        ]
+        cursor.executemany("""
+            INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, default_users)
+
+    # --- 2. Patient Admissions Table ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS patient_admissions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        admission_id TEXT UNIQUE NOT NULL,
+        patient_id TEXT NOT NULL,
+        patient_name TEXT NOT NULL,
+        age INTEGER,
+        gender TEXT,
+        department TEXT NOT NULL,
+        admission_type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'Admitted',
+        bed_number TEXT,
+        admitted_at TEXT NOT NULL,
+        discharged_at TEXT,
+        admitted_by TEXT NOT NULL,
+        discharged_by TEXT,
+        clinical_notes TEXT,
+        updated_at TEXT NOT NULL
+    )
+    """)
+
+    # Seed initial active admissions if empty
+    cursor.execute("SELECT COUNT(*) FROM patient_admissions")
+    if cursor.fetchone()[0] == 0:
+        now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        initial_admissions = [
+            ("ADM-20261015-001", "PAT-10842", "Arjun Mehra", 54, "Male", "Medicine", "Emergency", "Admitted", "MED-B12", "2026-10-15 06:30:00", None, "admit_officer", None, "Acute exacerbation of COPD with respiratory distress", now_ts),
+            ("ADM-20261015-002", "PAT-10843", "Sunita Verma", 42, "Female", "Surgery", "Elective", "Admitted", "SUR-B08", "2026-10-15 07:15:00", None, "admit_officer", None, "Post-op laparoscopic cholecystectomy monitoring", now_ts),
+            ("ADM-20261015-003", "PAT-10844", "David Fernandes", 68, "Male", "Medical ICU", "Emergency", "Admitted", "MICU-B03", "2026-10-15 05:00:00", None, "admit_officer", None, "Septic shock requiring arterial line & vasopressors", now_ts),
+            ("ADM-20261015-004", "PAT-10845", "Ananya Roy", 29, "Female", "Obstetrics", "Urgent", "Admitted", "OBS-B05", "2026-10-15 08:00:00", None, "admit_officer", None, "Active labor, fetal monitoring unremarkable", now_ts),
+            ("ADM-20261015-005", "PAT-10846", "Rohan Kapoor", 11, "Male", "Pediatrics", "Elective", "Admitted", "PED-B04", "2026-10-15 08:30:00", None, "admit_officer", None, "Acute asthma exacerbation, nebulization ongoing", now_ts)
+        ]
+        cursor.executemany("""
+            INSERT INTO patient_admissions (
+                admission_id, patient_id, patient_name, age, gender, department,
+                admission_type, status, bed_number, admitted_at, discharged_at,
+                admitted_by, discharged_by, clinical_notes, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, initial_admissions)
+
+    # --- 3. Audit Logs Table ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS audit_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        actor_username TEXT NOT NULL,
+        actor_role TEXT NOT NULL,
+        action TEXT NOT NULL,
+        target_id TEXT,
+        target_type TEXT,
+        status TEXT NOT NULL DEFAULT 'SUCCESS',
+        details TEXT
+    )
+    """)
+
+    # --- 4. Hospital Data Sync Telemetry ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS hospital_data_sync (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        entity_type TEXT UNIQUE NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1,
+        last_updated_at TEXT NOT NULL,
+        updated_by TEXT
+    )
+    """)
+
+    cursor.execute("SELECT COUNT(*) FROM hospital_data_sync")
+    if cursor.fetchone()[0] == 0:
+        now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute("INSERT INTO hospital_data_sync (entity_type, version, last_updated_at, updated_by) VALUES (?, ?, ?, ?)",
+                       ("admissions", 1, now_ts, "system"))
+        cursor.execute("INSERT INTO hospital_data_sync (entity_type, version, last_updated_at, updated_by) VALUES (?, ?, ?, ?)",
+                       ("resources", 1, now_ts, "system"))
+        cursor.execute("INSERT INTO hospital_data_sync (entity_type, version, last_updated_at, updated_by) VALUES (?, ?, ?, ?)",
+                       ("global", 1, now_ts, "system"))
+
+    # --- 5. Department Resources Table (authoritative capacity baseline) ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS department_resources (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        resource_id TEXT UNIQUE NOT NULL,
+        resource_type TEXT NOT NULL,
+        department TEXT NOT NULL,
+        total_capacity INTEGER NOT NULL DEFAULT 0,
+        unavailable_capacity INTEGER NOT NULL DEFAULT 0,
+        occupied_capacity INTEGER NOT NULL DEFAULT 0,
+        available_capacity INTEGER NOT NULL DEFAULT 0,
+        staffed_capacity INTEGER NOT NULL DEFAULT 0,
+        forecast_demand INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT
+    )
+    """)
+
+    cursor.execute("SELECT COUNT(*) FROM department_resources")
+    if cursor.fetchone()[0] == 0:
+        dept_csv = PROJECT_ROOT / "data" / "department_resources.csv"
+        if dept_csv.exists():
+            import pandas as pd
+            df_d = pd.read_csv(dept_csv)
+            now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            for _, r in df_d.iterrows():
+                cursor.execute("""
+                    INSERT INTO department_resources (
+                        resource_id, resource_type, department, total_capacity,
+                        unavailable_capacity, occupied_capacity, available_capacity,
+                        staffed_capacity, forecast_demand, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    str(r['resource_id']), str(r['resource_type']), str(r['department']),
+                    int(r['total_capacity']), int(r['unavailable_capacity']), int(r['occupied_capacity']),
+                    int(r['available_capacity']), int(r['staffed_capacity']), int(r['forecast_demand']),
+                    now_ts
+                ))
+
     conn.commit()
     conn.close()
 

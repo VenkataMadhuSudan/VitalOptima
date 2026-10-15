@@ -270,6 +270,7 @@ def show_historical_data_view():
             ("hospital_census_daily", "📅 365 Days Daily Hospital Census (hospital_census_daily)"),
             ("staffing_roster", "👥 Clinical Staffing Rosters & Shifts (staffing_roster)"),
             ("inventory_supplies", "📦 Consumables & Stock Telemetry (inventory_supplies)"),
+            ("blood_bank_inventory", "🩸 Hospital Blood Bank & Transfusion Reserves (blood_bank_inventory)"),
             ("demand_forecast_hourly", "📈 24-Hour Patient Demand Forecast (demand_forecast_hourly)"),
             ("decision_log", "⚖️ Administrative Decisions Audit Log (decision_log)"),
             ("system_alerts", "🚨 Active Safety Alerts & Alarms (system_alerts)"),
