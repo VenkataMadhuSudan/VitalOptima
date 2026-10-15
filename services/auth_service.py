@@ -638,14 +638,63 @@ def delete_user(
     )
     return True
 
+
+def update_user_password(
+    user_identifier: Any,
+    new_password: str,
+    actor_user: Optional[Dict[str, Any]] = None
+) -> bool:
+    """
+    Updates the password for an accessor account.
+    Enforces 'users.manage' permission, validates password complexity (>=6 chars),
+    hashes with PBKDF2-HMAC-SHA256, and synchronizes across SQLite and PostgreSQL.
+    """
+    require_permission("users.manage", actor_user)
+    actor_username = (actor_user.get("username", "admin") if actor_user else "admin").strip().lower()
+    actor_role = actor_user.get("role", ROLE_ADMIN) if actor_user else ROLE_ADMIN
+
+    if not new_password or len(new_password.strip()) < 6:
+        raise ValueError("New password must be at least 6 characters long.")
+
+    target_name = _resolve_username(user_identifier)
+    if not target_name:
+        raise ValueError(f"Accessor account '{user_identifier}' not found.")
+
+    clean_target = target_name.strip().lower()
+    pw_hash, salt = hash_password(new_password.strip())
+
+    # Update SQLite
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE users SET password_hash = ?, salt = ? WHERE LOWER(username) = ?",
+        (pw_hash, salt, clean_target)
+    )
+    conn.commit()
+    conn.close()
+
+    # Update PostgreSQL if available
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.begin() as pg_conn:
+                pg_conn.execute(
+                    text("UPDATE users SET password_hash = :h, salt = :s WHERE LOWER(username) = :u;"),
+                    {"h": pw_hash, "s": salt, "u": clean_target}
+                )
+    except Exception as e:
+        print(f"[Auth] Warning updating password in Postgres: {e}")
+
     log_audit_event(
         actor_username=actor_username,
         actor_role=actor_role,
-        action="users.delete",
-        target_id=target_name,
+        action="users.update_password",
+        target_id=clean_target,
         target_type="user",
         status="SUCCESS",
-        details=f"Deleted accessor account '{target_name}'"
+        details=f"Password updated for accessor '{clean_target}'"
     )
     return True
 

@@ -10,6 +10,7 @@ from config import HOSPITAL_NAME, ADMIN_USER, ADMIN_INITIALS, get_system_timesta
 from services.auth_service import (
     get_current_user, require_permission, has_permission,
     get_all_users, create_new_user, toggle_user_status, delete_user,
+    update_user_password,
     get_recent_audit_logs, ROLE_ADMIN, ROLE_ADMISSION_OFFICER
 )
 from ui.components import render_top_nav, render_footer
@@ -140,6 +141,30 @@ def show_settings_view():
                             st.rerun()
                         except Exception as ex:
                             st.error(str(ex))
+
+                st.markdown("<hr style='margin: 0.75rem 0 0.65rem 0; border: none; border-top: 1px dashed #CBD5E1;'/>", unsafe_allow_html=True)
+                st.markdown("<div style='font-size: 0.84rem; font-weight: 700; color: #1E293B; margin-bottom: 0.35rem;'>🔑 Update Accessor Password</div>", unsafe_allow_html=True)
+                
+                pw_col1, pw_col2 = st.columns([3.2, 1.4])
+                with pw_col1:
+                    new_pw_input = st.text_input(
+                        f"New Password for {selected_username}",
+                        type="password",
+                        placeholder="Enter new password (minimum 6 characters)",
+                        key="input_update_pw"
+                    )
+                with pw_col2:
+                    st.markdown("<div style='height: 1.7rem;'></div>", unsafe_allow_html=True)
+                    if st.button("💾 Set Password", width="stretch", type="primary", key="btn_update_pw"):
+                        if not new_pw_input or len(new_pw_input.strip()) < 6:
+                            st.error("Password must be at least 6 characters long.")
+                        else:
+                            try:
+                                update_user_password(selected_username, new_pw_input.strip(), actor_user=user)
+                                st.success(f"Password for '{selected_username}' has been updated!")
+                                st.rerun()
+                            except Exception as e_pw:
+                                st.error(str(e_pw))
 
     # =========================================================================
     # TAB 2: PROVISION NEW ACCESSOR ACCOUNT

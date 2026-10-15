@@ -34,26 +34,9 @@ def show_login_view():
             </div>
             """, unsafe_allow_html=True)
 
-            # Quick credential pre-fill helpers
-            st.markdown("<div style='font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 0.3rem;'>Quick Demo Role Selection:</div>", unsafe_allow_html=True)
-            c_btn1, c_btn2 = st.columns(2)
-            with c_btn1:
-                if st.button("👑 Admin Role", width="stretch", help="Fill administrator credentials"):
-                    st.session_state["login_user_input"] = "admin"
-                    st.session_state["login_pass_input"] = "Admin@Vital2026!"
-                    st.rerun()
-            with c_btn2:
-                if st.button("📋 Admission Officer", width="stretch", help="Fill admission officer credentials"):
-                    st.session_state["login_user_input"] = "admit_officer"
-                    st.session_state["login_pass_input"] = "Admit@Vital2026!"
-                    st.rerun()
-
-            default_user = st.session_state.get("login_user_input", "")
-            default_pass = st.session_state.get("login_pass_input", "")
-
             with st.form("login_form", clear_on_submit=False):
-                username = st.text_input("Username or Employee ID", value=default_user, placeholder="e.g. admin or admit_officer")
-                password = st.text_input("Password", value=default_pass, type="password", placeholder="Enter your secure password")
+                username = st.text_input("Username or Employee ID", placeholder="Enter your username or employee ID", key="login_username_field")
+                password = st.text_input("Password", type="password", placeholder="Enter your secure password", key="login_password_field")
                 
                 st.markdown("<div style='height: 0.5rem;'></div>", unsafe_allow_html=True)
                 submitted = st.form_submit_button("Sign In →", type="primary", width="stretch")

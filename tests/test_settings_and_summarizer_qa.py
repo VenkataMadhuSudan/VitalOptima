@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from db.database import init_db
 from services.auth_service import (
     authenticate_user, get_all_users, create_new_user,
-    toggle_user_status, delete_user,
+    toggle_user_status, delete_user, update_user_password,
     ROLE_ADMIN, ROLE_ADMISSION_OFFICER
 )
 from services.dashboard_summarizer import DashboardSummarizerService, handle_dashboard_qa_request
@@ -176,6 +176,41 @@ class TestSettingsAndSummarizerQA(unittest.TestCase):
         # Test clearing all queries
         qa_history.clear()
         self.assertEqual(len(qa_history), 0)
+
+    def test_06_update_user_password(self):
+        """Verify an admin can update an accessor's password with validation and authentication checks."""
+        # 1. Validation check (< 6 characters)
+        with self.assertRaises(ValueError):
+            update_user_password(
+                user_identifier="night_nurse_triage",
+                new_password="123",
+                actor_user=self.admin_user
+            )
+
+        # 2. Non-admin unauthorized check
+        with self.assertRaises(PermissionError):
+            update_user_password(
+                user_identifier="night_nurse_triage",
+                new_password="NewSecretPass@2026",
+                actor_user=self.officer_user
+            )
+
+        # 3. Successful update by admin
+        success = update_user_password(
+            user_identifier="night_nurse_triage",
+            new_password="NewSecretPass@2026",
+            actor_user=self.admin_user
+        )
+        self.assertTrue(success)
+
+        # 4. Old password should fail authentication
+        old_login = authenticate_user("night_nurse_triage", "NightNurse@2026")
+        self.assertIsNone(old_login)
+
+        # 5. New password should successfully authenticate
+        new_login = authenticate_user("night_nurse_triage", "NewSecretPass@2026")
+        self.assertIsNotNone(new_login)
+        self.assertEqual(new_login["username"], "night_nurse_triage")
 
 
 if __name__ == "__main__":
