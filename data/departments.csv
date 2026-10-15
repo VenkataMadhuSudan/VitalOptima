@@ -1,0 +1,7 @@
+Department,Total Beds,Occupied,Available,Unavailable,Occupancy,Color
+Emergency,60,52,6,2,87,#EF4444
+Internal Medicine,80,64,12,4,80,#F59E0B
+Surgery,70,56,10,4,80,#F59E0B
+Pediatrics,40,28,8,4,70,#10B981
+ICU,40,34,6,0,85,#EF4444
+Maternity,30,24,4,2,80,#F59E0B

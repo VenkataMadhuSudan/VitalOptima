@@ -1,0 +1,14 @@
+resource_id,resource_type,department,total_capacity,unavailable_capacity,occupied_capacity,available_capacity,staffed_capacity,forecast_demand
+GB-MED,General Bed,Medicine,120,5,95,20,91,100
+GB-SUR,General Bed,Surgery,80,4,63,13,74,66
+GB-ORT,General Bed,Orthopedics,40,1,33,6,39,34
+GB-PED,General Bed,Pediatrics,30,1,24,5,29,25
+GB-OBS,General Bed,Obstetrics,30,1,23,6,29,24
+ICU-MICU,ICU Bed,Medical ICU,18,1,14,3,17,15
+ICU-SICU,ICU Bed,Surgical ICU,12,1,9,2,9,13
+OR-MAIN,Operating Room,Main Theatre,8,1,6,1,7,6
+OR-DAY,Operating Room,Day Surgery,2,0,1,1,1,1
+OR-EMG,Operating Room,Emergency Theatre,2,0,1,1,1,3
+ED-ADULT,ED Treatment Space,ED Adult,28,2,16,10,23,29
+ED-PEDS,ED Treatment Space,ED Pediatric,8,0,4,4,6,4
+ED-RESUS,ED Treatment Space,ED Resuscitation,6,0,5,1,6,5

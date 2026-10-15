@@ -1,0 +1,331 @@
+date,item_id,item_name,item_category,opening_stock,daily_consumption,incoming_stock,closing_stock,reorder_threshold,supplier_lead_time_days
+2025-12-02,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1842,244,0,1598,975,3
+2025-12-03,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1598,263,0,1335,975,3
+2025-12-04,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1335,220,0,1115,975,3
+2025-12-05,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1115,232,0,883,975,3
+2025-12-06,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,883,206,0,677,975,3
+2025-12-07,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,677,248,0,429,975,3
+2025-12-08,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,429,209,2170,2390,975,3
+2025-12-09,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,2390,210,0,2180,975,3
+2025-12-10,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,2180,221,0,1959,975,3
+2025-12-11,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1959,210,0,1749,975,3
+2025-12-12,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1749,216,0,1533,975,3
+2025-12-13,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1533,221,0,1312,975,3
+2025-12-14,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1312,197,0,1115,975,3
+2025-12-15,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1115,219,0,896,975,3
+2025-12-16,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,896,202,0,694,975,3
+2025-12-17,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,694,217,0,477,975,3
+2025-12-18,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,477,213,0,264,975,3
+2025-12-19,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,264,194,0,70,975,3
+2025-12-20,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,70,70,0,0,975,3
+2025-12-21,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,0,209,2170,1961,975,3
+2025-12-22,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1961,194,0,1767,975,3
+2025-12-23,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1767,222,0,1545,975,3
+2025-12-24,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1545,228,0,1317,975,3
+2025-12-25,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1317,201,0,1116,975,3
+2025-12-26,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,1116,181,0,935,975,3
+2025-12-27,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,935,213,0,722,975,3
+2025-12-28,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,722,205,0,517,975,3
+2025-12-29,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,517,249,2170,2438,975,3
+2025-12-30,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,2438,224,0,2214,975,3
+2025-12-31,IV-NS500,Normal saline 0.9% 500 mL (bag),IV Fluids,2214,215,0,1999,975,3
+2025-12-02,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,807,118,0,689,427,3
+2025-12-03,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,689,97,0,592,427,3
+2025-12-04,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,592,113,0,479,427,3
+2025-12-05,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,479,92,0,387,427,3
+2025-12-06,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,387,88,0,299,427,3
+2025-12-07,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,299,86,0,213,427,3
+2025-12-08,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,213,92,950,1071,427,3
+2025-12-09,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,1071,90,0,981,427,3
+2025-12-10,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,981,80,0,901,427,3
+2025-12-11,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,901,89,0,812,427,3
+2025-12-12,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,812,91,0,721,427,3
+2025-12-13,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,721,96,0,625,427,3
+2025-12-14,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,625,99,0,526,427,3
+2025-12-15,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,526,92,0,434,427,3
+2025-12-16,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,434,90,0,344,427,3
+2025-12-17,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,344,101,0,243,427,3
+2025-12-18,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,243,107,0,136,427,3
+2025-12-19,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,136,95,950,991,427,3
+2025-12-20,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,991,93,0,898,427,3
+2025-12-21,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,898,81,0,817,427,3
+2025-12-22,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,817,90,0,727,427,3
+2025-12-23,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,727,103,0,624,427,3
+2025-12-24,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,624,100,0,524,427,3
+2025-12-25,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,524,96,0,428,427,3
+2025-12-26,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,428,85,0,343,427,3
+2025-12-27,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,343,94,0,249,427,3
+2025-12-28,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,249,89,0,160,427,3
+2025-12-29,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,160,101,950,1009,427,3
+2025-12-30,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,1009,94,0,915,427,3
+2025-12-31,IV-RL500,Ringer's lactate 500 mL (bag),IV Fluids,915,90,0,825,427,3
+2025-12-02,GLV-EXM,Nitrile exam gloves (pair),Gloves,36013,4881,0,31132,20850,4
+2025-12-03,GLV-EXM,Nitrile exam gloves (pair),Gloves,31132,4798,0,26334,20850,4
+2025-12-04,GLV-EXM,Nitrile exam gloves (pair),Gloves,26334,4320,0,22014,20850,4
+2025-12-05,GLV-EXM,Nitrile exam gloves (pair),Gloves,22014,4087,0,17927,20850,4
+2025-12-06,GLV-EXM,Nitrile exam gloves (pair),Gloves,17927,3674,0,14253,20850,4
+2025-12-07,GLV-EXM,Nitrile exam gloves (pair),Gloves,14253,3986,0,10267,20850,4
+2025-12-08,GLV-EXM,Nitrile exam gloves (pair),Gloves,10267,3734,0,6533,20850,4
+2025-12-09,GLV-EXM,Nitrile exam gloves (pair),Gloves,6533,3516,37910,40927,20850,4
+2025-12-10,GLV-EXM,Nitrile exam gloves (pair),Gloves,40927,3748,0,37179,20850,4
+2025-12-11,GLV-EXM,Nitrile exam gloves (pair),Gloves,37179,3877,0,33302,20850,4
+2025-12-12,GLV-EXM,Nitrile exam gloves (pair),Gloves,33302,3575,0,29727,20850,4
+2025-12-13,GLV-EXM,Nitrile exam gloves (pair),Gloves,29727,3640,0,26087,20850,4
+2025-12-14,GLV-EXM,Nitrile exam gloves (pair),Gloves,26087,3804,0,22283,20850,4
+2025-12-15,GLV-EXM,Nitrile exam gloves (pair),Gloves,22283,3782,0,18501,20850,4
+2025-12-16,GLV-EXM,Nitrile exam gloves (pair),Gloves,18501,4158,0,14343,20850,4
+2025-12-17,GLV-EXM,Nitrile exam gloves (pair),Gloves,14343,3346,0,10997,20850,4
+2025-12-18,GLV-EXM,Nitrile exam gloves (pair),Gloves,10997,3891,0,7106,20850,4
+2025-12-19,GLV-EXM,Nitrile exam gloves (pair),Gloves,7106,3637,37910,41379,20850,4
+2025-12-20,GLV-EXM,Nitrile exam gloves (pair),Gloves,41379,3760,0,37619,20850,4
+2025-12-21,GLV-EXM,Nitrile exam gloves (pair),Gloves,37619,3944,0,33675,20850,4
+2025-12-22,GLV-EXM,Nitrile exam gloves (pair),Gloves,33675,3651,0,30024,20850,4
+2025-12-23,GLV-EXM,Nitrile exam gloves (pair),Gloves,30024,3801,0,26223,20850,4
+2025-12-24,GLV-EXM,Nitrile exam gloves (pair),Gloves,26223,4243,0,21980,20850,4
+2025-12-25,GLV-EXM,Nitrile exam gloves (pair),Gloves,21980,3886,0,18094,20850,4
+2025-12-26,GLV-EXM,Nitrile exam gloves (pair),Gloves,18094,3579,0,14515,20850,4
+2025-12-27,GLV-EXM,Nitrile exam gloves (pair),Gloves,14515,3847,0,10668,20850,4
+2025-12-28,GLV-EXM,Nitrile exam gloves (pair),Gloves,10668,3421,0,7247,20850,4
+2025-12-29,GLV-EXM,Nitrile exam gloves (pair),Gloves,7247,3918,37910,41239,20850,4
+2025-12-30,GLV-EXM,Nitrile exam gloves (pair),Gloves,41239,3389,0,37850,20850,4
+2025-12-31,GLV-EXM,Nitrile exam gloves (pair),Gloves,37850,3588,0,34262,20850,4
+2025-12-02,GLV-STR,Sterile surgical gloves (pair),Gloves,319,28,0,291,197,5
+2025-12-03,GLV-STR,Sterile surgical gloves (pair),Gloves,291,47,0,244,197,5
+2025-12-04,GLV-STR,Sterile surgical gloves (pair),Gloves,244,49,0,195,197,5
+2025-12-05,GLV-STR,Sterile surgical gloves (pair),Gloves,195,20,0,175,197,5
+2025-12-06,GLV-STR,Sterile surgical gloves (pair),Gloves,175,7,0,168,197,5
+2025-12-07,GLV-STR,Sterile surgical gloves (pair),Gloves,168,4,0,164,197,5
+2025-12-08,GLV-STR,Sterile surgical gloves (pair),Gloves,164,63,0,101,197,5
+2025-12-09,GLV-STR,Sterile surgical gloves (pair),Gloves,101,51,310,360,197,5
+2025-12-10,GLV-STR,Sterile surgical gloves (pair),Gloves,360,40,0,320,197,5
+2025-12-11,GLV-STR,Sterile surgical gloves (pair),Gloves,320,27,0,293,197,5
+2025-12-12,GLV-STR,Sterile surgical gloves (pair),Gloves,293,20,0,273,197,5
+2025-12-13,GLV-STR,Sterile surgical gloves (pair),Gloves,273,8,0,265,197,5
+2025-12-14,GLV-STR,Sterile surgical gloves (pair),Gloves,265,9,0,256,197,5
+2025-12-15,GLV-STR,Sterile surgical gloves (pair),Gloves,256,37,0,219,197,5
+2025-12-16,GLV-STR,Sterile surgical gloves (pair),Gloves,219,61,0,158,197,5
+2025-12-17,GLV-STR,Sterile surgical gloves (pair),Gloves,158,29,0,129,197,5
+2025-12-18,GLV-STR,Sterile surgical gloves (pair),Gloves,129,22,0,107,197,5
+2025-12-19,GLV-STR,Sterile surgical gloves (pair),Gloves,107,41,0,66,197,5
+2025-12-20,GLV-STR,Sterile surgical gloves (pair),Gloves,66,11,0,55,197,5
+2025-12-21,GLV-STR,Sterile surgical gloves (pair),Gloves,55,5,310,360,197,5
+2025-12-22,GLV-STR,Sterile surgical gloves (pair),Gloves,360,38,0,322,197,5
+2025-12-23,GLV-STR,Sterile surgical gloves (pair),Gloves,322,64,0,258,197,5
+2025-12-24,GLV-STR,Sterile surgical gloves (pair),Gloves,258,23,0,235,197,5
+2025-12-25,GLV-STR,Sterile surgical gloves (pair),Gloves,235,33,0,202,197,5
+2025-12-26,GLV-STR,Sterile surgical gloves (pair),Gloves,202,44,0,158,197,5
+2025-12-27,GLV-STR,Sterile surgical gloves (pair),Gloves,158,20,0,138,197,5
+2025-12-28,GLV-STR,Sterile surgical gloves (pair),Gloves,138,7,0,131,197,5
+2025-12-29,GLV-STR,Sterile surgical gloves (pair),Gloves,131,54,0,77,197,5
+2025-12-30,GLV-STR,Sterile surgical gloves (pair),Gloves,77,25,0,52,197,5
+2025-12-31,GLV-STR,Sterile surgical gloves (pair),Gloves,52,18,310,344,197,5
+2025-12-02,SYR-5ML,Syringe 5 mL (unit),Syringes,6432,740,0,5692,3724,4
+2025-12-03,SYR-5ML,Syringe 5 mL (unit),Syringes,5692,740,0,4952,3724,4
+2025-12-04,SYR-5ML,Syringe 5 mL (unit),Syringes,4952,734,0,4218,3724,4
+2025-12-05,SYR-5ML,Syringe 5 mL (unit),Syringes,4218,711,0,3507,3724,4
+2025-12-06,SYR-5ML,Syringe 5 mL (unit),Syringes,3507,661,0,2846,3724,4
+2025-12-07,SYR-5ML,Syringe 5 mL (unit),Syringes,2846,655,0,2191,3724,4
+2025-12-08,SYR-5ML,Syringe 5 mL (unit),Syringes,2191,666,0,1525,3724,4
+2025-12-09,SYR-5ML,Syringe 5 mL (unit),Syringes,1525,671,6770,7624,3724,4
+2025-12-10,SYR-5ML,Syringe 5 mL (unit),Syringes,7624,646,0,6978,3724,4
+2025-12-11,SYR-5ML,Syringe 5 mL (unit),Syringes,6978,696,0,6282,3724,4
+2025-12-12,SYR-5ML,Syringe 5 mL (unit),Syringes,6282,704,0,5578,3724,4
+2025-12-13,SYR-5ML,Syringe 5 mL (unit),Syringes,5578,760,0,4818,3724,4
+2025-12-14,SYR-5ML,Syringe 5 mL (unit),Syringes,4818,725,0,4093,3724,4
+2025-12-15,SYR-5ML,Syringe 5 mL (unit),Syringes,4093,726,0,3367,3724,4
+2025-12-16,SYR-5ML,Syringe 5 mL (unit),Syringes,3367,695,0,2672,3724,4
+2025-12-17,SYR-5ML,Syringe 5 mL (unit),Syringes,2672,725,0,1947,3724,4
+2025-12-18,SYR-5ML,Syringe 5 mL (unit),Syringes,1947,753,0,1194,3724,4
+2025-12-19,SYR-5ML,Syringe 5 mL (unit),Syringes,1194,597,6770,7367,3724,4
+2025-12-20,SYR-5ML,Syringe 5 mL (unit),Syringes,7367,640,0,6727,3724,4
+2025-12-21,SYR-5ML,Syringe 5 mL (unit),Syringes,6727,687,0,6040,3724,4
+2025-12-22,SYR-5ML,Syringe 5 mL (unit),Syringes,6040,641,0,5399,3724,4
+2025-12-23,SYR-5ML,Syringe 5 mL (unit),Syringes,5399,641,0,4758,3724,4
+2025-12-24,SYR-5ML,Syringe 5 mL (unit),Syringes,4758,680,0,4078,3724,4
+2025-12-25,SYR-5ML,Syringe 5 mL (unit),Syringes,4078,667,0,3411,3724,4
+2025-12-26,SYR-5ML,Syringe 5 mL (unit),Syringes,3411,665,0,2746,3724,4
+2025-12-27,SYR-5ML,Syringe 5 mL (unit),Syringes,2746,691,0,2055,3724,4
+2025-12-28,SYR-5ML,Syringe 5 mL (unit),Syringes,2055,683,0,1372,3724,4
+2025-12-29,SYR-5ML,Syringe 5 mL (unit),Syringes,1372,734,6770,7408,3724,4
+2025-12-30,SYR-5ML,Syringe 5 mL (unit),Syringes,7408,712,0,6696,3724,4
+2025-12-31,SYR-5ML,Syringe 5 mL (unit),Syringes,6696,650,0,6046,3724,4
+2025-12-02,SYR-10ML,Syringe 10 mL (unit),Syringes,3088,411,0,2677,1788,4
+2025-12-03,SYR-10ML,Syringe 10 mL (unit),Syringes,2677,341,0,2336,1788,4
+2025-12-04,SYR-10ML,Syringe 10 mL (unit),Syringes,2336,372,0,1964,1788,4
+2025-12-05,SYR-10ML,Syringe 10 mL (unit),Syringes,1964,336,0,1628,1788,4
+2025-12-06,SYR-10ML,Syringe 10 mL (unit),Syringes,1628,311,0,1317,1788,4
+2025-12-07,SYR-10ML,Syringe 10 mL (unit),Syringes,1317,321,0,996,1788,4
+2025-12-08,SYR-10ML,Syringe 10 mL (unit),Syringes,996,362,0,634,1788,4
+2025-12-09,SYR-10ML,Syringe 10 mL (unit),Syringes,634,355,3250,3529,1788,4
+2025-12-10,SYR-10ML,Syringe 10 mL (unit),Syringes,3529,305,0,3224,1788,4
+2025-12-11,SYR-10ML,Syringe 10 mL (unit),Syringes,3224,318,0,2906,1788,4
+2025-12-12,SYR-10ML,Syringe 10 mL (unit),Syringes,2906,307,0,2599,1788,4
+2025-12-13,SYR-10ML,Syringe 10 mL (unit),Syringes,2599,294,0,2305,1788,4
+2025-12-14,SYR-10ML,Syringe 10 mL (unit),Syringes,2305,333,0,1972,1788,4
+2025-12-15,SYR-10ML,Syringe 10 mL (unit),Syringes,1972,328,0,1644,1788,4
+2025-12-16,SYR-10ML,Syringe 10 mL (unit),Syringes,1644,348,0,1296,1788,4
+2025-12-17,SYR-10ML,Syringe 10 mL (unit),Syringes,1296,312,0,984,1788,4
+2025-12-18,SYR-10ML,Syringe 10 mL (unit),Syringes,984,330,0,654,1788,4
+2025-12-19,SYR-10ML,Syringe 10 mL (unit),Syringes,654,318,3250,3586,1788,4
+2025-12-20,SYR-10ML,Syringe 10 mL (unit),Syringes,3586,275,0,3311,1788,4
+2025-12-21,SYR-10ML,Syringe 10 mL (unit),Syringes,3311,290,0,3021,1788,4
+2025-12-22,SYR-10ML,Syringe 10 mL (unit),Syringes,3021,296,0,2725,1788,4
+2025-12-23,SYR-10ML,Syringe 10 mL (unit),Syringes,2725,327,0,2398,1788,4
+2025-12-24,SYR-10ML,Syringe 10 mL (unit),Syringes,2398,322,0,2076,1788,4
+2025-12-25,SYR-10ML,Syringe 10 mL (unit),Syringes,2076,321,0,1755,1788,4
+2025-12-26,SYR-10ML,Syringe 10 mL (unit),Syringes,1755,291,0,1464,1788,4
+2025-12-27,SYR-10ML,Syringe 10 mL (unit),Syringes,1464,329,0,1135,1788,4
+2025-12-28,SYR-10ML,Syringe 10 mL (unit),Syringes,1135,349,0,786,1788,4
+2025-12-29,SYR-10ML,Syringe 10 mL (unit),Syringes,786,330,3250,3706,1788,4
+2025-12-30,SYR-10ML,Syringe 10 mL (unit),Syringes,3706,314,0,3392,1788,4
+2025-12-31,SYR-10ML,Syringe 10 mL (unit),Syringes,3392,322,0,3070,1788,4
+2025-12-02,MSK-SURG,Surgical mask (unit),Masks,10243,941,0,9302,6341,5
+2025-12-03,MSK-SURG,Surgical mask (unit),Masks,9302,941,0,8361,6341,5
+2025-12-04,MSK-SURG,Surgical mask (unit),Masks,8361,951,0,7410,6341,5
+2025-12-05,MSK-SURG,Surgical mask (unit),Masks,7410,978,0,6432,6341,5
+2025-12-06,MSK-SURG,Surgical mask (unit),Masks,6432,1034,0,5398,6341,5
+2025-12-07,MSK-SURG,Surgical mask (unit),Masks,5398,905,0,4493,6341,5
+2025-12-08,MSK-SURG,Surgical mask (unit),Masks,4493,1011,0,3482,6341,5
+2025-12-09,MSK-SURG,Surgical mask (unit),Masks,3482,1085,0,2397,6341,5
+2025-12-10,MSK-SURG,Surgical mask (unit),Masks,2397,970,0,1427,6341,5
+2025-12-11,MSK-SURG,Surgical mask (unit),Masks,1427,921,9760,10266,6341,5
+2025-12-12,MSK-SURG,Surgical mask (unit),Masks,10266,947,0,9319,6341,5
+2025-12-13,MSK-SURG,Surgical mask (unit),Masks,9319,864,0,8455,6341,5
+2025-12-14,MSK-SURG,Surgical mask (unit),Masks,8455,823,0,7632,6341,5
+2025-12-15,MSK-SURG,Surgical mask (unit),Masks,7632,967,0,6665,6341,5
+2025-12-16,MSK-SURG,Surgical mask (unit),Masks,6665,1100,0,5565,6341,5
+2025-12-17,MSK-SURG,Surgical mask (unit),Masks,5565,935,0,4630,6341,5
+2025-12-18,MSK-SURG,Surgical mask (unit),Masks,4630,1161,0,3469,6341,5
+2025-12-19,MSK-SURG,Surgical mask (unit),Masks,3469,945,0,2524,6341,5
+2025-12-20,MSK-SURG,Surgical mask (unit),Masks,2524,961,0,1563,6341,5
+2025-12-21,MSK-SURG,Surgical mask (unit),Masks,1563,933,9760,10390,6341,5
+2025-12-22,MSK-SURG,Surgical mask (unit),Masks,10390,1003,0,9387,6341,5
+2025-12-23,MSK-SURG,Surgical mask (unit),Masks,9387,1058,0,8329,6341,5
+2025-12-24,MSK-SURG,Surgical mask (unit),Masks,8329,1071,0,7258,6341,5
+2025-12-25,MSK-SURG,Surgical mask (unit),Masks,7258,936,0,6322,6341,5
+2025-12-26,MSK-SURG,Surgical mask (unit),Masks,6322,883,0,5439,6341,5
+2025-12-27,MSK-SURG,Surgical mask (unit),Masks,5439,839,0,4600,6341,5
+2025-12-28,MSK-SURG,Surgical mask (unit),Masks,4600,887,0,3713,6341,5
+2025-12-29,MSK-SURG,Surgical mask (unit),Masks,3713,979,0,2734,6341,5
+2025-12-30,MSK-SURG,Surgical mask (unit),Masks,2734,938,9760,11556,6341,5
+2025-12-31,MSK-SURG,Surgical mask (unit),Masks,11556,953,0,10603,6341,5
+2025-12-02,MSK-N95,N95 respirator (unit),Masks,1023,129,0,894,765,7
+2025-12-03,MSK-N95,N95 respirator (unit),Masks,894,139,0,755,765,7
+2025-12-04,MSK-N95,N95 respirator (unit),Masks,755,133,0,622,765,7
+2025-12-05,MSK-N95,N95 respirator (unit),Masks,622,134,0,488,765,7
+2025-12-06,MSK-N95,N95 respirator (unit),Masks,488,138,0,350,765,7
+2025-12-07,MSK-N95,N95 respirator (unit),Masks,350,140,0,210,765,7
+2025-12-08,MSK-N95,N95 respirator (unit),Masks,210,143,0,67,765,7
+2025-12-09,MSK-N95,N95 respirator (unit),Masks,67,67,0,0,765,7
+2025-12-10,MSK-N95,N95 respirator (unit),Masks,0,138,1370,1232,765,7
+2025-12-11,MSK-N95,N95 respirator (unit),Masks,1232,139,0,1093,765,7
+2025-12-12,MSK-N95,N95 respirator (unit),Masks,1093,134,0,959,765,7
+2025-12-13,MSK-N95,N95 respirator (unit),Masks,959,141,0,818,765,7
+2025-12-14,MSK-N95,N95 respirator (unit),Masks,818,125,0,693,765,7
+2025-12-15,MSK-N95,N95 respirator (unit),Masks,693,136,0,557,765,7
+2025-12-16,MSK-N95,N95 respirator (unit),Masks,557,131,0,426,765,7
+2025-12-17,MSK-N95,N95 respirator (unit),Masks,426,137,0,289,765,7
+2025-12-18,MSK-N95,N95 respirator (unit),Masks,289,141,0,148,765,7
+2025-12-19,MSK-N95,N95 respirator (unit),Masks,148,127,0,21,765,7
+2025-12-20,MSK-N95,N95 respirator (unit),Masks,21,21,0,0,765,7
+2025-12-21,MSK-N95,N95 respirator (unit),Masks,0,130,1370,1240,765,7
+2025-12-22,MSK-N95,N95 respirator (unit),Masks,1240,152,0,1088,765,7
+2025-12-23,MSK-N95,N95 respirator (unit),Masks,1088,133,0,955,765,7
+2025-12-24,MSK-N95,N95 respirator (unit),Masks,955,146,0,809,765,7
+2025-12-25,MSK-N95,N95 respirator (unit),Masks,809,148,0,661,765,7
+2025-12-26,MSK-N95,N95 respirator (unit),Masks,661,140,0,521,765,7
+2025-12-27,MSK-N95,N95 respirator (unit),Masks,521,118,0,403,765,7
+2025-12-28,MSK-N95,N95 respirator (unit),Masks,403,115,0,288,765,7
+2025-12-29,MSK-N95,N95 respirator (unit),Masks,288,139,0,149,765,7
+2025-12-30,MSK-N95,N95 respirator (unit),Masks,149,143,0,6,765,7
+2025-12-31,MSK-N95,N95 respirator (unit),Masks,6,6,0,0,765,7
+2025-12-02,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,4672,505,0,4167,3047,6
+2025-12-03,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,4167,474,0,3693,3047,6
+2025-12-04,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,3693,422,0,3271,3047,6
+2025-12-05,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,3271,419,0,2852,3047,6
+2025-12-06,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,2852,402,0,2450,3047,6
+2025-12-07,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,2450,433,0,2017,3047,6
+2025-12-08,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,2017,404,0,1613,3047,6
+2025-12-09,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,1613,401,0,1212,3047,6
+2025-12-10,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,1212,391,0,821,3047,6
+2025-12-11,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,821,442,4070,4449,3047,6
+2025-12-12,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,4449,410,0,4039,3047,6
+2025-12-13,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,4039,382,0,3657,3047,6
+2025-12-14,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,3657,426,0,3231,3047,6
+2025-12-15,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,3231,430,0,2801,3047,6
+2025-12-16,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,2801,415,0,2386,3047,6
+2025-12-17,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,2386,429,0,1957,3047,6
+2025-12-18,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,1957,425,0,1532,3047,6
+2025-12-19,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,1532,366,0,1166,3047,6
+2025-12-20,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,1166,402,0,764,3047,6
+2025-12-21,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,764,395,4070,4439,3047,6
+2025-12-22,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,4439,425,0,4014,3047,6
+2025-12-23,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,4014,441,0,3573,3047,6
+2025-12-24,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,3573,384,0,3189,3047,6
+2025-12-25,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,3189,416,0,2773,3047,6
+2025-12-26,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,2773,379,0,2394,3047,6
+2025-12-27,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,2394,356,0,2038,3047,6
+2025-12-28,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,2038,425,0,1613,3047,6
+2025-12-29,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,1613,372,0,1241,3047,6
+2025-12-30,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,1241,359,0,882,3047,6
+2025-12-31,OTC-PARA500,"Paracetamol 500 mg tablet, OTC (tablet)",Non-prescription Consumables,882,363,4070,4589,3047,6
+2025-12-02,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,4144,571,0,3573,2194,3
+2025-12-03,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,3573,490,0,3083,2194,3
+2025-12-04,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,3083,554,0,2529,2194,3
+2025-12-05,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,2529,484,0,2045,2194,3
+2025-12-06,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,2045,478,0,1567,2194,3
+2025-12-07,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,1567,504,0,1063,2194,3
+2025-12-08,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,1063,496,4880,5447,2194,3
+2025-12-09,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,5447,545,0,4902,2194,3
+2025-12-10,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,4902,453,0,4449,2194,3
+2025-12-11,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,4449,506,0,3943,2194,3
+2025-12-12,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,3943,521,0,3422,2194,3
+2025-12-13,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,3422,481,0,2941,2194,3
+2025-12-14,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,2941,449,0,2492,2194,3
+2025-12-15,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,2492,454,0,2038,2194,3
+2025-12-16,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,2038,518,0,1520,2194,3
+2025-12-17,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,1520,515,0,1005,2194,3
+2025-12-18,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,1005,448,4880,5437,2194,3
+2025-12-19,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,5437,464,0,4973,2194,3
+2025-12-20,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,4973,416,0,4557,2194,3
+2025-12-21,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,4557,479,0,4078,2194,3
+2025-12-22,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,4078,483,0,3595,2194,3
+2025-12-23,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,3595,511,0,3084,2194,3
+2025-12-24,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,3084,485,0,2599,2194,3
+2025-12-25,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,2599,462,0,2137,2194,3
+2025-12-26,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,2137,459,0,1678,2194,3
+2025-12-27,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,1678,409,0,1269,2194,3
+2025-12-28,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,1269,449,4880,5700,2194,3
+2025-12-29,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,5700,481,0,5219,2194,3
+2025-12-30,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,5219,458,0,4761,2194,3
+2025-12-31,OTC-WIPE,Antiseptic wipe (unit),Non-prescription Consumables,4761,520,0,4241,2194,3
+2025-12-02,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,5146,585,0,4561,2979,4
+2025-12-03,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,4561,620,0,3941,2979,4
+2025-12-04,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,3941,657,0,3284,2979,4
+2025-12-05,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,3284,515,0,2769,2979,4
+2025-12-06,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,2769,523,0,2246,2979,4
+2025-12-07,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,2246,550,0,1696,2979,4
+2025-12-08,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,1696,480,0,1216,2979,4
+2025-12-09,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,1216,575,5420,6061,2979,4
+2025-12-10,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,6061,561,0,5500,2979,4
+2025-12-11,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,5500,565,0,4935,2979,4
+2025-12-12,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,4935,542,0,4393,2979,4
+2025-12-13,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,4393,603,0,3790,2979,4
+2025-12-14,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,3790,484,0,3306,2979,4
+2025-12-15,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,3306,551,0,2755,2979,4
+2025-12-16,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,2755,612,0,2143,2979,4
+2025-12-17,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,2143,517,0,1626,2979,4
+2025-12-18,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,1626,589,0,1037,2979,4
+2025-12-19,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,1037,491,5420,5966,2979,4
+2025-12-20,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,5966,507,0,5459,2979,4
+2025-12-21,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,5459,455,0,5004,2979,4
+2025-12-22,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,5004,487,0,4517,2979,4
+2025-12-23,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,4517,540,0,3977,2979,4
+2025-12-24,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,3977,520,0,3457,2979,4
+2025-12-25,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,3457,601,0,2856,2979,4
+2025-12-26,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,2856,447,0,2409,2979,4
+2025-12-27,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,2409,532,0,1877,2979,4
+2025-12-28,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,1877,509,0,1368,2979,4
+2025-12-29,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,1368,584,5420,6204,2979,4
+2025-12-30,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,6204,568,0,5636,2979,4
+2025-12-31,OTC-GAUZE,Sterile gauze pad (unit),Non-prescription Consumables,5636,570,0,5066,2979,4
