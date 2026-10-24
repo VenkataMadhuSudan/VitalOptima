@@ -134,7 +134,12 @@ def show_simulator():
             target_query = st.session_state.pop("sim_active_query")
 
         if target_query:
-            engine_name = "Google Gemini AI" if has_key else "Hospital Physics Engine"
+            if is_grok:
+                engine_name = "xAI Grok-2"
+            elif has_key:
+                engine_name = "Google Gemini AI"
+            else:
+                engine_name = "Hospital Physics Engine"
             with st.spinner(f"Analyzing emergency scenario with {engine_name}..."):
                 t0 = time.time()
                 res = parse_what_if_query(target_query, api_key=active_gemini_key)

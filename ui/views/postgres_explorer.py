@@ -179,10 +179,15 @@ def show_historical_data_view():
 
         if query_to_run:
             st.session_state["last_nlp_query"] = query_to_run
-            engine_name = "Google Gemini AI" if has_gemini else "Hospital NL2SQL Engine"
+            if is_grok:
+                engine_name = "xAI Grok-2"
+            elif has_llm:
+                engine_name = "Google Gemini AI"
+            else:
+                engine_name = "Hospital NL2SQL Engine"
             with st.spinner(f"Analyzing question with {engine_name} and querying hospital records..."):
                 start_time = time.time()
-                result = process_natural_language_query(query_to_run, api_key=active_gemini_key)
+                result = process_natural_language_query(query_to_run, api_key=active_llm_key)
                 exec_ms = round((time.time() - start_time) * 1000, 1)
 
                 # Append to session history (keep last 5)
