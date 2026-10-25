@@ -245,10 +245,10 @@ Access the application in your browser at `http://localhost:8501`.
 
 ### Demo User Accounts
 
-| Role | Username | Password | Operational Access |
-| :--- | :--- | :--- | :--- |
-| **Hospital Administrator** | `admin` | `Admin@Vital2026!` | Full administrative access: Command Center, Forecasting, Optimization, Crisis Simulator, Inventory, Audit Logs, User Settings |
-| **Admission Officer** | `admit_officer` | `Admit@Vital2026!` | Clinical admission access: Patient Registration, Bed Allocation, Active Inpatient Roster, Patient Discharge |
+| Role | Username | Operational Access |
+| :--- | :--- | :--- |
+| **Hospital Administrator** | `admin` | Full administrative access: Command Center, Forecasting, Optimization, Crisis Simulator, Inventory, Audit Logs, User Settings |
+| **Admission Officer** | `admit_officer` | Clinical admission access: Patient Registration, Bed Allocation, Active Inpatient Roster, Patient Discharge |
 
 ---
 
@@ -256,7 +256,7 @@ Access the application in your browser at `http://localhost:8501`.
 
 Follow this guided evaluator workflow to test the platform's core operational capabilities:
 
-1. **Log In:** Navigate to `http://localhost:8501` and log in as `admin` (`Admin@Vital2026!`).
+1. **Log In:** Navigate to `http://localhost:8501` and sign in using the one-click **👑 Admin (Command Center)** button or enter `admin`.
 2. **Review Command Center:** Inspect the live operational KPIs, departmental occupancy meters, and the 24-hour predictive demand curve.
 3. **Examine Demand Forecasting:** Navigate to **Demand Forecasting**. Review the empirical 90% prediction intervals, baseline comparisons, and feature importance rankings.
 4. **Configure a Crisis Scenario:** Navigate to **What-If Crisis Simulator**. Select the **Mass Casualty Trauma Surge** preset (+85% arrival surge, 8 damaged ICU beds, 5% staff loss).
