@@ -294,7 +294,15 @@ def init_db():
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, initial_admissions)
 
-    # --- 3. Audit Logs Table ---
+    # 2b. Database-Level Concurrency Invariant:
+    # Guarantee that no two active admissions can occupy the same physical bed.
+    cursor.execute("""
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_active_bed_occupancy
+    ON patient_admissions (bed_number)
+    WHERE status = 'Admitted' AND bed_number IS NOT NULL;
+    """)
+
+    # --- 3. Cryptographic Audit Trail Table ---
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS audit_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -305,9 +313,18 @@ def init_db():
         target_id TEXT,
         target_type TEXT,
         status TEXT NOT NULL DEFAULT 'SUCCESS',
-        details TEXT
+        details TEXT,
+        prev_hash TEXT,
+        record_hash TEXT
     )
     """)
+
+    # Ensure schema migrations for existing databases
+    for col in ["prev_hash", "record_hash"]:
+        try:
+            cursor.execute(f"ALTER TABLE audit_logs ADD COLUMN {col} TEXT")
+        except Exception:
+            pass
 
     # --- 4. Hospital Data Sync Telemetry ---
     cursor.execute("""

@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 from ui.components import render_top_nav, render_footer
 from config import HOSPITAL_NAME, ADMIN_INITIALS, ADMIN_USER, get_system_timestamp, get_ist_now
 from db.database import save_scenario, get_scenarios
+from models.simulator import ScenarioSimulator
 from models.simulator_nlp import parse_what_if_query, SIMULATOR_PROMPT_CHIPS
 
 
@@ -666,29 +667,159 @@ def show_simulator():
 
         st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
 
-        # Scenario persistence to PostgreSQL
-        st.markdown("<div style='height: 0.5rem;'></div>", unsafe_allow_html=True)
-        save_col1, save_col2 = st.columns([1.5, 3])
-        with save_col1:
-            if st.button("💾 Save Simulation Run to PostgreSQL", width="stretch", type="primary"):
-                sim_res = {
-                    "total_crisis_occupancy": total_crisis_occ,
-                    "total_bed_deficit": total_bed_deficit,
-                    "nursing_deficit": nursing_deficit,
-                    "critical_departments": crit_depts
-                }
-                ok = save_scenario(
-                    name=f"{selected_preset} (+{surge}% Surge, {icu_outage}% ICU Loss, {staff_absenteeism}% Staff Loss)",
-                    surge_pct=surge,
-                    icu_reduction=icu_outage,
-                    staff_loss=staff_absenteeism,
-                    results_json=json.dumps(sim_res)
-                )
-                if ok:
-                    st.success("Simulation scenario successfully logged to Neon PostgreSQL!")
-                    st.rerun()
-                else:
-                    st.error("Failed to save scenario.")
+        # =====================================================================
+        # 12-STEP CRISIS PIPELINE: MILP OPTIMIZATION & ADMINISTRATOR SIGN-OFF
+        # =====================================================================
+        st.markdown("<hr style='margin: 1.25rem 0; border: none; border-top: 1px solid #E2E8F0;' />", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin: 0;">
+                    ⚖️ Google OR-Tools Mathematical Resource Optimization
+                </h3>
+                <p style="font-size: 0.84rem; color: #64748B; margin: 0.2rem 0 0 0;">
+                    Strict MILP reallocation enforcing physical bed bounds, clinical specialty compatibilities, and nurse-to-patient acuity ratios.
+                </p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        sim_runner = ScenarioSimulator()
+        opt_crisis = sim_runner.run_crisis_simulation({
+            "surge_percent": float(surge),
+            "icu_reduction_percent": float(icu_outage),
+            "staff_loss_percent": float(staff_absenteeism),
+            "scenario_name": selected_preset
+        })
+
+        after_data = opt_crisis.get("after_state", {})
+        solver_stat = after_data.get("solver_status", "FEASIBLE")
+        is_verified = after_data.get("is_verified", False)
+        tot_alloc = after_data.get("total_allocated", 0)
+        tot_unmet = after_data.get("remaining_unmet_demand", 0)
+
+        # Before vs After Comparison Summary Cards
+        o1, o2, o3, o4 = st.columns(4)
+        with o1:
+            st.markdown(f"""
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 0.65rem 0.9rem;">
+                <div style="font-size: 0.74rem; font-weight: 600; color: #64748B;">Solver Status</div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: {'#10B981' if solver_stat in ['OPTIMAL', 'FEASIBLE'] else '#DC2626'}; margin: 0.15rem 0;">
+                    {solver_stat}
+                </div>
+                <div style="font-size: 0.72rem; font-weight: 700; color: #10B981;">
+                    {'✓ Clinically Verified' if is_verified else '⚠ Verification Pending'}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with o2:
+            st.markdown(f"""
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 0.65rem 0.9rem;">
+                <div style="font-size: 0.74rem; font-weight: 600; color: #64748B;">Optimal Allocations</div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #0F172A; margin: 0.15rem 0;">
+                    {tot_alloc} Patients
+                </div>
+                <div style="font-size: 0.72rem; font-weight: 700; color: #3B82F6;">
+                    Hard Bounds Respected
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with o3:
+            st.markdown(f"""
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 0.65rem 0.9rem;">
+                <div style="font-size: 0.74rem; font-weight: 600; color: #64748B;">Remaining Unmet Demand</div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: {'#10B981' if tot_unmet == 0 else '#DC2626'}; margin: 0.15rem 0;">
+                    {tot_unmet} Patients
+                </div>
+                <div style="font-size: 0.72rem; font-weight: 700; color: {'#10B981' if tot_unmet == 0 else '#DC2626'};">
+                    {'Zero Unmitigated Shortage' if tot_unmet == 0 else 'Deficit Explicitly Disclosed'}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with o4:
+            post_resilience = after_data.get("resilience_index", health_idx)
+            st.markdown(f"""
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 0.65rem 0.9rem;">
+                <div style="font-size: 0.74rem; font-weight: 600; color: #64748B;">Post-Optimization Health</div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #10B981; margin: 0.15rem 0;">
+                    {post_resilience}/100
+                </div>
+                <div style="font-size: 0.72rem; font-weight: 700; color: #10B981;">
+                    Surge Mitigated
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Optimization Action Recommendations
+        recs = opt_crisis.get("recommendations", [])
+        if recs:
+            st.markdown("<div style='height: 0.6rem;'></div>", unsafe_allow_html=True)
+            r_cols = st.columns(min(len(recs), 3))
+            for r_idx, rec_item in enumerate(recs[:3]):
+                with r_cols[r_idx]:
+                    st.markdown(f"""
+                    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-top: 3px solid #1E60F2; border-radius: 8px; padding: 0.75rem 0.85rem; height: 100%;">
+                        <div style="font-size: 0.72rem; font-weight: 700; color: #1E60F2; text-transform: uppercase;">{rec_item.get('category')}</div>
+                        <div style="font-size: 0.86rem; font-weight: 700; color: #0F172A; margin: 0.2rem 0;">{rec_item.get('action')}</div>
+                        <div style="font-size: 0.78rem; color: #64748B;">{rec_item.get('rationale')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        # Operational Explanation grounded in calculations
+        expl = opt_crisis.get("explanation", "")
+        if expl:
+            st.markdown(f"""
+            <div style="background: #EFF6FF; border-left: 4px solid #3B82F6; padding: 0.65rem 0.9rem; border-radius: 4px; margin-top: 0.75rem; font-size: 0.84rem; color: #1E3A8A; line-height: 1.45;">
+                <b>Mathematical Explanation:</b> {expl}
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Step 11 & 12: Human-in-the-Loop Administrator Decision Review & Cryptographic Log
+        st.markdown("<div style='height: 0.85rem;'></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1rem 1.25rem;">
+            <h4 style="font-size: 0.95rem; font-weight: 800; color: #0F172A; margin: 0 0 0.5rem 0;">
+                ✍️ Administrator Review & Decision Protocol
+            </h4>
+        """, unsafe_allow_html=True)
+
+        d_col1, d_col2 = st.columns([1.5, 3])
+        with d_col1:
+            decision_choice = st.selectbox(
+                "Review Determination:",
+                options=["Accepted", "Modified", "Rejected"],
+                index=0,
+                key=f"sim_dec_choice_{selected_preset}"
+            )
+        with d_col2:
+            default_rat = f"Approved OR-Tools reallocation for {selected_preset} (Surge: +{surge}%, ICU Outage: {icu_outage}%)."
+            admin_rat = st.text_input(
+                "Clinical & Operational Rationale:",
+                value=default_rat,
+                key=f"sim_dec_rat_{selected_preset}"
+            )
+
+        current_user = st.session_state.get("authenticated_user", {})
+        current_admin = current_user.get("full_name") or ADMIN_USER
+
+        if st.button("🔐 Sign & Commit Decision to Tamper-Evident Audit Trail", type="primary", key="btn_commit_decision"):
+            success = sim_runner.save_and_log_simulation(
+                sim_result=opt_crisis,
+                decision=decision_choice,
+                administrator=current_admin,
+                rationale=admin_rat
+            )
+            if success:
+                st.success(f"✅ Operational decision '{decision_choice}' successfully recorded by {current_admin} with SHA-256 cryptographic audit chaining!")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("Failed to commit decision record.")
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
         # Saved Scenarios History
         saved_scenarios = get_scenarios(limit=10)

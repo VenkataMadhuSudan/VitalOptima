@@ -250,6 +250,8 @@ class AuditLog(Base):
     target_type = Column(String(50), nullable=True)
     status = Column(String(50), nullable=False, default="SUCCESS")  # "SUCCESS", "DENIED", "FAILED"
     details = Column(Text, nullable=True)
+    prev_hash = Column(String(64), nullable=True)
+    record_hash = Column(String(64), nullable=True)
 
     def __repr__(self):
         return f"<AuditLog(actor='{self.actor_username}', action='{self.action}', status='{self.status}')>"

@@ -44,6 +44,7 @@ if not current_user:
     st.html(get_custom_css("Light Mode"))
     show_login_view()
     st.stop()
+    current_user = {"role": "GUEST", "full_name": "Guest", "username": "guest"}
 
 # Initialize Session State
 if "current_page" not in st.session_state:

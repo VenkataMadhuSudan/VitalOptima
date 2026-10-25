@@ -292,6 +292,25 @@ def logout_user():
         pass
 
 
+def compute_audit_record_hash(
+    prev_hash: str,
+    timestamp: str,
+    actor_username: str,
+    actor_role: str,
+    action: str,
+    target_id: Optional[str],
+    target_type: Optional[str],
+    status: str,
+    details: Optional[str]
+) -> str:
+    """Computes SHA-256 digest over the canonical representation of an audit event."""
+    canonical_payload = (
+        f"{prev_hash}|{timestamp}|{actor_username}|{actor_role}|{action}|"
+        f"{target_id or ''}|{target_type or ''}|{status}|{details or ''}"
+    )
+    return hashlib.sha256(canonical_payload.encode('utf-8')).hexdigest()
+
+
 def log_audit_event(
     actor_username: str,
     actor_role: str,
@@ -302,10 +321,36 @@ def log_audit_event(
     details: Optional[str] = None
 ):
     """
-    Records an immutable audit event in both PostgreSQL (primary) and SQLite (durability fallback).
+    Records an append-only, cryptographic hash-chained audit event in both PostgreSQL and SQLite.
+    Each record links to the previous event's SHA-256 hash to detect unauthorized tampering.
     Never logs plaintext passwords, tokens, or sensitive patient identifiable keys.
     """
     now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Fetch previous record hash to maintain append-only chain
+    prev_hash = "GENESIS"
+    try:
+        conn_prev = get_sqlite_conn()
+        cur_prev = conn_prev.cursor()
+        cur_prev.execute("SELECT record_hash FROM audit_logs WHERE record_hash IS NOT NULL ORDER BY id DESC LIMIT 1")
+        last_row = cur_prev.fetchone()
+        if last_row and last_row["record_hash"]:
+            prev_hash = last_row["record_hash"]
+        conn_prev.close()
+    except Exception:
+        prev_hash = "GENESIS"
+
+    record_hash = compute_audit_record_hash(
+        prev_hash=prev_hash,
+        timestamp=now_str,
+        actor_username=actor_username,
+        actor_role=actor_role,
+        action=action,
+        target_id=target_id,
+        target_type=target_type,
+        status=status,
+        details=details
+    )
 
     # 1. PostgreSQL
     try:
@@ -315,8 +360,8 @@ def log_audit_event(
         if engine is not None:
             with engine.begin() as conn:
                 conn.execute(text("""
-                    INSERT INTO audit_logs (timestamp, actor_username, actor_role, action, target_id, target_type, status, details)
-                    VALUES (:ts, :act_user, :act_role, :action, :tgt_id, :tgt_type, :status, :details);
+                    INSERT INTO audit_logs (timestamp, actor_username, actor_role, action, target_id, target_type, status, details, prev_hash, record_hash)
+                    VALUES (:ts, :act_user, :act_role, :action, :tgt_id, :tgt_type, :status, :details, :phash, :rhash);
                 """), {
                     "ts": datetime.utcnow(),
                     "act_user": actor_username,
@@ -325,7 +370,9 @@ def log_audit_event(
                     "tgt_id": target_id,
                     "tgt_type": target_type,
                     "status": status,
-                    "details": details or ""
+                    "details": details or "",
+                    "phash": prev_hash,
+                    "rhash": record_hash
                 })
     except Exception:
         pass
@@ -335,13 +382,83 @@ def log_audit_event(
         conn = get_sqlite_conn()
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO audit_logs (timestamp, actor_username, actor_role, action, target_id, target_type, status, details)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (now_str, actor_username, actor_role, action, target_id, target_type, status, details or ""))
+            INSERT INTO audit_logs (timestamp, actor_username, actor_role, action, target_id, target_type, status, details, prev_hash, record_hash)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (now_str, actor_username, actor_role, action, target_id, target_type, status, details or "", prev_hash, record_hash))
         conn.commit()
         conn.close()
     except Exception as e:
         print(f"[AuditLog] Fallback write error: {e}")
+
+
+def verify_audit_log_chain() -> Dict[str, Any]:
+    """
+    Cryptographically verifies the append-only SHA-256 hash chain of the audit log.
+    Detects tampering, dropped records, or unauthorized modifications to the recorded sequence.
+    """
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, timestamp, actor_username, actor_role, action, target_id, target_type, status, details, prev_hash, record_hash FROM audit_logs ORDER BY id ASC")
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+
+        if not rows:
+            return {"valid": True, "total_records": 0, "tampered_at_id": None, "details": "Audit log is empty."}
+
+        expected_prev_hash = "GENESIS"
+        chained_count = 0
+
+        for row in rows:
+            rec_id = row["id"]
+            actual_prev = row.get("prev_hash")
+            actual_hash = row.get("record_hash")
+
+            # Records before cryptographic chaining was introduced have NULL hash
+            if actual_hash is None:
+                continue
+
+            chained_count += 1
+
+            if actual_prev != expected_prev_hash and expected_prev_hash != "GENESIS":
+                return {
+                    "valid": False,
+                    "total_records": len(rows),
+                    "tampered_at_id": rec_id,
+                    "details": f"Broken chain link at log ID {rec_id}: expected prev_hash '{expected_prev_hash}', got '{actual_prev}'."
+                }
+
+            expected_hash = compute_audit_record_hash(
+                prev_hash=actual_prev or "GENESIS",
+                timestamp=row["timestamp"],
+                actor_username=row["actor_username"],
+                actor_role=row["actor_role"],
+                action=row["action"],
+                target_id=row["target_id"],
+                target_type=row["target_type"],
+                status=row["status"],
+                details=row["details"]
+            )
+
+            if actual_hash != expected_hash:
+                return {
+                    "valid": False,
+                    "total_records": len(rows),
+                    "tampered_at_id": rec_id,
+                    "details": f"Digest mismatch at log ID {rec_id}: record payload has been altered."
+                }
+
+            expected_prev_hash = actual_hash
+
+        return {
+            "valid": True,
+            "total_records": len(rows),
+            "chained_records": chained_count,
+            "tampered_at_id": None,
+            "details": f"Cryptographic integrity verified across {chained_count} chained audit records."
+        }
+    except Exception as e:
+        return {"valid": False, "total_records": 0, "tampered_at_id": None, "details": f"Verification error: {str(e)}"}
 
 
 def get_recent_audit_logs(limit: int = 50) -> List[Dict[str, Any]]:

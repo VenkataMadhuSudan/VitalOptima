@@ -27,8 +27,8 @@ FALLBACK_MODEL = "grok-beta"
 
 def get_api_key(override_key: Optional[str] = None) -> Optional[str]:
     """Retrieve xAI API key from override parameter, environment, or .env file."""
-    if override_key and override_key.strip():
-        return override_key.strip()
+    if override_key is not None:
+        return override_key.strip() if override_key.strip() else None
     key = os.getenv("XAI_API_KEY", "").strip()
     if key:
         return key
