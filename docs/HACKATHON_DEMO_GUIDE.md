@@ -61,9 +61,9 @@ This end-to-end operational workflow demonstrates live calculation, mathematical
 1. Log in as `admin`.
 2. Navigate to **Demand Forecasting** via the sidebar.
 3. Observe the live 24-hour hourly arrival projections and 7-day inpatient forecasts:
-   - **Feature Integrity:** Rolling statistics strictly use shifted historical values ($t-1$) to prevent lookahead data leakage.
-   - **Baseline Comparison Table:** View held-out test evaluation comparing the Random Forest model against **Persistence ($t-1$)** and **Seasonal-Naive ($t-7$)** baselines.
-   - **Prediction Intervals:** Upper (95th percentile) and Lower (5th percentile) bounds calculated directly from empirical residual distributions.
+   - **Feature Integrity:** All rolling statistics strictly shift backward ($t-1$) with warmup rows dropped to eliminate lookahead data leakage.
+   - **Baseline Comparison Table:** View held-out test evaluation comparing Random Forest against **Persistence ($t-1$)**, **Seasonal-Naive ($t-7$)**, and regularized **Ridge Regression** baselines across a strict 3-way chronological split (70% Train, 15% Calibration, 15% Untouched Test).
+   - **Prediction Intervals:** Nominal 90% bounds ($q_{0.05}, q_{0.95}$) calibrated exclusively on the independent calibration split and evaluated on the untouched test split.
 
 ### Step 2: Detect Bottlenecks (Hospital Command Center)
 1. Navigate to **Hospital Command Center**.

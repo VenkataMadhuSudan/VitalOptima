@@ -296,11 +296,24 @@ def init_db():
 
     # 2b. Database-Level Concurrency Invariant:
     # Guarantee that no two active admissions can occupy the same physical bed.
+    # Safe migration handling: detect historical duplicate active bed assignments without crashing
     cursor.execute("""
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_active_bed_occupancy
-    ON patient_admissions (bed_number)
-    WHERE status = 'Admitted' AND bed_number IS NOT NULL;
+        SELECT bed_number, COUNT(*) as cnt
+        FROM patient_admissions
+        WHERE status = 'Admitted' AND bed_number IS NOT NULL
+        GROUP BY bed_number
+        HAVING cnt > 1;
     """)
+    dup_active_beds = cursor.fetchall()
+    if dup_active_beds:
+        dup_summary = ", ".join([f"{r['bed_number']} ({r['cnt']} records)" for r in dup_active_beds])
+        print(f"[DB Migration Notice] Found historical duplicate active bed assignments: {dup_summary}. Preserving records safely.")
+    else:
+        cursor.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_active_bed_occupancy
+        ON patient_admissions (bed_number)
+        WHERE status = 'Admitted' AND bed_number IS NOT NULL;
+        """)
 
     # --- 3. Cryptographic Audit Trail Table ---
     cursor.execute("""

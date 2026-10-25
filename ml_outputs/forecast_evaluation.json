@@ -1,0 +1,74 @@
+{
+  "evaluation_timestamp": "2026-10-25 10:36:29 UTC",
+  "methodology": {
+    "split": "Chronological 3-way split (Train 70%, Calibration 15%, Untouched Test 15%)",
+    "leakage_controls": "Lag-1/7 on shift(1), rolling statistics on shift(1), 7 warmup rows dropped",
+    "interval_calibration": "Empirical residual quantiles (5th, 95th percentiles) fitted strictly on calibration split",
+    "nominal_target_coverage": 90.0,
+    "observed_heldout_coverage": 70.9,
+    "coverage_limitation_disclosure": "Observed coverage (70.9%) reflects late-year winter surge volatility in held-out test split."
+  },
+  "metrics": {
+    "dataset_rows": 365,
+    "effective_rows": 358,
+    "train_sample_size": 250,
+    "cal_sample_size": 53,
+    "test_sample_size": 55,
+    "mae": 16.75,
+    "r2": 0.241,
+    "rmse": 22.73,
+    "wape_pct": 9.01,
+    "nominal_coverage_pct": 90.0,
+    "observed_test_coverage_pct": 70.9,
+    "cal_q05": -22.38,
+    "cal_q95": 20.14,
+    "cal_interval_width": 42.52,
+    "split_strategy": "Chronological 70% Train / 15% Calibration / 15% Untouched Test",
+    "avg_daily_arrivals": 174.2,
+    "avg_daily_admissions": 47.1,
+    "feature_cols": [
+      "dow_sin",
+      "dow_cos",
+      "doy_sin",
+      "doy_cos",
+      "lag_1_arrivals",
+      "lag_7_arrivals",
+      "lag_1_admissions",
+      "lag_1_discharges",
+      "rolling_3_arrivals",
+      "rolling_7_arrivals",
+      "staff_ratio",
+      "surgeries_lag1"
+    ]
+  },
+  "benchmarks": [
+    {
+      "Model": "Persistence (t-1)",
+      "MAE": 21.38,
+      "RMSE": 26.64,
+      "WAPE (%)": 11.5,
+      "Type": "Baseline"
+    },
+    {
+      "Model": "Seasonal Naive (t-7)",
+      "MAE": 27.13,
+      "RMSE": 38.85,
+      "WAPE (%)": 14.58,
+      "Type": "Baseline"
+    },
+    {
+      "Model": "Ridge Regression",
+      "MAE": 16.43,
+      "RMSE": 22.6,
+      "WAPE (%)": 8.83,
+      "Type": "Linear Baseline"
+    },
+    {
+      "Model": "Random Forest (VitalOptima)",
+      "MAE": 16.75,
+      "RMSE": 22.73,
+      "WAPE (%)": 9.01,
+      "Type": "Selected ML Model"
+    }
+  ]
+}

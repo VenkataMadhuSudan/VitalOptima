@@ -1,41 +1,44 @@
+"""
+VitalOptima What-If Crisis Simulator NLP Query Parser Test Suite
+Validates natural language intent classification, parametric stress scenario extraction,
+and conversational edge cases against diverse operational inquiries.
+"""
+import unittest
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8')
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from models.simulator_nlp import parse_what_if_query, SIMULATOR_PROMPT_CHIPS
 
-print("=" * 80)
-print("TESTING WHAT-IF SIMULATOR NLP ENGINE AGAINST DIVERSE INQUIRIES:")
-print("=" * 80)
 
-for label, q in SIMULATOR_PROMPT_CHIPS:
-    res = parse_what_if_query(q)
-    print(f"[{label}]")
-    print(f"  Query: \"{q}\"")
-    print(f"  -> Matched Intent: {res['matched_intent']}")
-    print(f"  -> Table Title: {res['table_title']}")
-    print(f"  -> Table Columns: {list(res['primary_df'].columns)}")
-    print(f"  -> First Row Sample: {dict(list(res['primary_df'].iloc[0].items())[:3])}")
-    print(f"  -> Number of Available Lenses: {len(res['available_views'])}")
-    print("-" * 80)
+class TestSimulatorNLP(unittest.TestCase):
+    def test_simulator_prompt_chips(self):
+        """Verifies standard prompt chips resolve into valid structured operational tables."""
+        for label, q in SIMULATOR_PROMPT_CHIPS:
+            res = parse_what_if_query(q)
+            self.assertIsNotNone(res["matched_intent"], f"Failed to match intent for '{label}'")
+            self.assertIsNotNone(res["table_title"])
+            self.assertGreater(len(res["primary_df"]), 0)
+            self.assertGreater(len(res["available_views"]), 0)
 
-# Also test conversational edge cases
-edge_cases = [
-    "What if 10 ICU beds are closed due to bio-contamination?",
-    "Can we handle if arrivals double?",
-    "What protocols if staff goes on strike with 30 nurses missing?",
-    "Which department will run out of capacity first?"
-]
+    def test_conversational_edge_cases(self):
+        """Verifies diverse conversational what-if scenarios extract realistic parameters."""
+        edge_cases = [
+            ("What if 10 ICU beds are closed due to bio-contamination?", "icu_outage"),
+            ("Can we handle if arrivals double?", "surge"),
+            ("What protocols if staff goes on strike with 30 nurses missing?", "staff_loss"),
+            ("Which department will run out of capacity first?", "vulnerability")
+        ]
+        for q, expected_key in edge_cases:
+            res = parse_what_if_query(q)
+            self.assertIn("parameters", res)
+            self.assertIn("health_idx", res)
+            self.assertIn("answer_summary", res)
+            self.assertTrue(len(res["answer_summary"]) > 20)
 
-print("\nTESTING CONVERSATIONAL EDGE CASES:")
-print("=" * 80)
-for q in edge_cases:
-    res = parse_what_if_query(q)
-    print(f"Query: \"{q}\"")
-    print(f"  Extracted: {res['parameters']} -> Health: {res['health_idx']}/100 | Bed Deficit: {res['total_bed_deficit']}")
-    print(f"  Summary:\n{res['answer_summary']}")
-    print("-" * 80)
 
-print("\nALL WHAT-IF SIMULATOR NLP TESTS PASSED EXCELLENTLY!")
+if __name__ == "__main__":
+    unittest.main()

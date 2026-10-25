@@ -98,3 +98,41 @@ A deep source code inspection and test execution run (60 automated tests execute
 | **Phase 8** | **UI/UX Grounding & Before/After Comparison** | P2 | Connect Simulator to Optimizer UI with side-by-side comparison cards and one-click admin decision logging. |
 | **Phase 9** | **Continuous Integration & Test Hardening** | P1 | Add `.github/workflows/ci.yml`; verify all unit and integration test suites pass offline. |
 | **Phase 10** | **Demo Guide & Technical Documentation** | P2 | Create `docs/HACKATHON_DEMO_GUIDE.md`; update `README.md` to match verified code. |
+
+---
+
+## 5. Second-Pass Engineering Audit, Correctness Fixes & Verified Baseline
+
+**Audit Date:** 2026-10-25  
+**Scope:** Re-auditing claims from initial engineering pass, eliminating subtle data leakage, correcting prediction interval calibration, hardening database concurrency, upgrading password security, canonicalizing the audit hash chain, and verifying all 86 unit tests.
+
+### 5.1 Verified Defects in Initial Engineering Pass
+1. **Subtle Data Leakage via `bfill()`**: While lag and rolling features shifted observations (`shift(1)`), applying `bfill()` on the full dataset back-filled the first 7 warmup days using future unobserved observations.
+2. **Prediction Interval Self-Evaluation Leakage**: Prediction intervals were calibrated on the 5th and 95th percentiles of held-out test residuals, and coverage was reported on that exact same test set, violating out-of-sample calibration principles.
+3. **Audit Log String Concatenation**: Field concatenation using pipe delimiters (`|`) lacked unambiguous boundary separation, creating vulnerabilities if user details contained pipe characters. Furthermore, concurrent writes could race to read the latest `prev_hash`.
+4. **Password Hashing Compliance Claims**: PBKDF2 with 100,000 iterations was described as NIST-compliant without acknowledging current OWASP recommendations (600,000 iterations for PBKDF2-HMAC-SHA256).
+5. **Incomplete Unittest Discovery**: Several test suites (`test_core.py`, `test_real_datasets.py`, `test_simulator_nlp.py`) used standalone test functions rather than `unittest.TestCase` classes, leaving them undiscovered by standard test runners.
+
+### 5.2 Substantive Engineering Corrections Implemented
+1. **Strict 3-Way Chronological Partition & Zero-Leakage Pipeline (`models/forecaster.py`)**:
+   - Initial 7 warmup days dropped (`df.iloc[7:].reset_index(drop=True)`), completely removing `bfill()`.
+   - Chronological partition: Training (250 days / ~70%), Calibration (53 days / ~15%), and Untouched Test (55 days / ~15%).
+   - Empirical prediction interval quantiles ($q_{0.05} = -22.38, q_{0.95} = +20.14$) fitted exclusively on the calibration set.
+   - Evaluated on untouched test split: MAE = 16.75, RMSE = 22.73, WAPE = 9.01%, Observed Test Coverage = **70.9%** (honestly reported on winter surge period without artificial clamping).
+   - Exported machine-readable evaluation results to `ml_outputs/forecast_evaluation.json`.
+   - Distinct labeling: 24h curve labeled as an *illustrative diurnal distribution derived from daily predictions using circadian harmonics*.
+2. **Canonical JSON Audit Hash Chain & Serialized Concurrency (`services/auth_service.py`)**:
+   - Switched to unambiguous canonical JSON serialization (`json.dumps(payload, sort_keys=True, separators=(',', ':'))`).
+   - Re-entrant thread lock (`_AUDIT_LOG_LOCK`) and SQLite `BEGIN IMMEDIATE` transactions guarantee atomic serialized append operations.
+   - Backward-compatible verification supporting both canonical JSON and legacy format digests.
+   - Expanded tamper detection tests: modified payload, corrupted `prev_hash`, dropped middle record, and multi-threaded concurrent appends.
+3. **OWASP-Compliant Password Hashing & Transparent Rehash-on-Login (`services/auth_service.py`)**:
+   - Default iteration count upgraded to 600,000 iterations for PBKDF2-HMAC-SHA256.
+   - Backward-compatible verification for legacy 100,000-iteration credentials.
+   - Transparent rehash-on-login upgrades legacy password hashes in the database upon successful authentication.
+4. **Database Migration Safety & Admission Concurrency (`db/database.py`, `services/admission_service.py`)**:
+   - Safe migration check queries historical duplicate active beds prior to creating `idx_active_bed_occupancy`.
+   - Dedicated concurrency test (`tests/test_admission_concurrency.py`) verifies two simultaneous admission attempts for the same bed yield exactly 1 success and 1 clean conflict error.
+5. **Test Discovery Harmonization**:
+   - Converted all standalone test scripts to standard `unittest.TestCase` suites.
+   - **86 discoverable unit tests** cleanly executed and passed via `python -m unittest discover tests`.

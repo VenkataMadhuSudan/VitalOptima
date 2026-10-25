@@ -1,587 +1,349 @@
-# VitalOptima 🏥
-### Enterprise AI Hospital Resource Optimization & Clinical Operations Command Center
-*Engineered for High-Stakes Healthcare Resource Allocation, Emergency Surge Readiness, and Resilient Clinical Logistics*
+# VitalOptima
+
+### AI-Assisted Hospital Operations Intelligence & Resource Optimization
+
+VitalOptima combines demand forecasting, constrained resource optimization, emergency scenario simulation, and human-reviewed operational recommendations to help hospital administrators understand and evaluate resource shortages.
 
 ---
 
-[![Python 3.11](https://img.shields.io/badge/Python-3.11+-3776AB.svg?logo=python&logoColor=white)](https://python.org)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB.svg?logo=python&logoColor=white)](https://python.org)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.40+-FF4B4B.svg?logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3+-F7931E.svg?logo=scikit-learn&logoColor=white)](https://scikit-learn.org)
 [![Google OR-Tools](https://img.shields.io/badge/Google-OR--Tools%20MILP-EA4335.svg?logo=google&logoColor=white)](https://developers.google.com/optimization)
-[![Neon PostgreSQL](https://img.shields.io/badge/Database-Neon%20PostgreSQL%20Cloud-00E599.svg?logo=postgresql&logoColor=white)](https://neon.tech)
-[![SQLite Dual-Engine](https://img.shields.io/badge/Fallback-SQLite%20Zero--Downtime-003B57.svg?logo=sqlite&logoColor=white)](#dual-engine-database-architecture)
-[![xAI Grok](https://img.shields.io/badge/AI%20Agent-xAI%20Grok--2-000000.svg?logo=x&logoColor=white)](https://x.ai)
-[![Security: NIST PBKDF2](https://img.shields.io/badge/Security-NIST%20PBKDF2--HMAC--SHA256-4F46E5.svg)](#security--role-based-access-control-rbac)
-[![Test Suite](https://img.shields.io/badge/Unit%20Tests-8%20Suites%20Passing-success.svg)](#-automated-testing--verification-suite)
+[![Database](https://img.shields.io/badge/Database-SQLite%20%7C%20PostgreSQL-003B57.svg?logo=sqlite&logoColor=white)](#database-safety--dual-engine-architecture)
+[![Unit Tests](https://img.shields.io/badge/Automated%20Tests-86%20Passing-success.svg)](#automated-testing--verification)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
 
-## 📑 Table of Contents
-- [🎯 Executive Overview & Problem Statement](#-executive-overview--problem-statement)
-- [✨ Key Platform Features & Modules](#-key-platform-features--modules)
-- [📸 Command Center & Module Walkthrough](#-command-center--module-walkthrough)
-- [🏗️ System Architecture & Data Flow](#️-system-architecture--data-flow)
-- [🗄️ Dual-Engine Database Architecture](#️-dual-engine-database-architecture)
-- [🧮 Mathematical Formulation (OR-Tools MILP)](#-mathematical-formulation-or-tools-milp)
-- [📈 Machine Learning Demand Forecaster](#-machine-learning-demand-forecaster)
-- [🤖 Grok AI Insights & Autonomous Agent](#-grok-ai-insights--autonomous-agent)
-- [🔒 Security & Role-Based Access Control (RBAC)](#-security--role-based-access-control-rbac)
-- [🚀 Quick Start & Installation Guide](#-quick-start--installation-guide)
-- [🔑 Demo Credentials & Access Profiles](#-demo-credentials--access-profiles)
-- [🧪 Automated Testing & Verification Suite](#-automated-testing--verification-suite)
-- [🛠️ CLI Pipeline & Predefined Scenarios](#️-cli-pipeline--predefined-scenarios)
-- [🛡️ Clinical Governance, Ethics & Safety Disclosures](#️-clinical-governance-ethics--safety-disclosures)
-- [👥 Development Team Schedule & Contributions](#-development-team-schedule--contributions)
+## Table of Contents
+- [Project Overview](#project-overview)
+- [How VitalOptima Works](#how-vitaloptima-works)
+- [System Architecture](#system-architecture)
+- [Core Features](#core-features)
+- [Empirical Forecast Evaluation](#empirical-forecast-evaluation)
+- [Quick Start Guide](#quick-start-guide)
+- [Flagship Demo: Hospital Emergency Surge](#flagship-demo-hospital-emergency-surge)
+- [Database Safety & Dual-Engine Architecture](#database-safety--dual-engine-architecture)
+- [Security & Tamper-Evident Audit Trail](#security--tamper-evident-audit-trail)
+- [Automated Testing & Verification](#automated-testing--verification)
+- [Clinical & Responsible-Use Disclosures](#clinical--responsible-use-disclosures)
+- [Documentation Links](#documentation-links)
 
 ---
 
-## 🎯 Executive Overview & Problem Statement
+## Project Overview
 
-Modern tertiary hospitals and trauma centers operate under acute stochastic pressure. Unpredictable emergency arrival waves, sudden mass-casualty incidents, staffing shortages, and supply disruptions frequently cause dangerous clinical bottlenecks:
-- **Emergency Department (ED) Crowding & Ambulance Diversion**: Overflowing ED bays cause delayed triage and increased patient mortality.
-- **Critical Care (ICU) Saturation**: High occupancy leaves zero margin for post-surgical recovery or acute trauma stabilization.
-- **Operating Room (OR) Scheduling Gridlock**: Unplanned emergency procedures disrupt scheduled elective surgeries.
-- **Nursing & Clinical Shift Deficits**: Unbalanced staff-to-patient ratios lead to nurse burnout and compromised patient safety.
-- **Consumable & Blood Bank Depletion**: Stockouts of critical universal donor blood (O-) or respiratory PPE jeopardize trauma response.
+Tertiary hospitals and trauma centers operate under stochastic pressure where patient influx, bed capacity, staffing ratios, and medical supplies fluctuate continuously. During high-demand periods—such as seasonal respiratory epidemics, mass casualty trauma incidents, or sudden nursing absenteeism—administrative delays in resource reallocation cause emergency boarding, delayed care, and staff burnout.
 
-### The VitalOptima Solution
-**VitalOptima** is an enterprise-grade Hospital Operations Command Center and Decision-Support System that unifies:
-1. **Circadian Machine Learning Demand Forecasting**: Anticipates 24-hour emergency arrival volumes, inpatient admissions, and ICU bed demand with cyclic diurnal features and 95% confidence intervals.
-2. **Mathematical Optimization via Google OR-Tools MILP**: Solves complex bed, nursing roster, and surgical suite allocations in sub-second execution times with strict clinical feasibility constraints.
-3. **Dedicated Admission Officer Workspace**: Streamlines patient admission, ACID-compliant bed allocation with concurrency mutex locking, real-time census tracking, and safe patient discharge.
-4. **Natural Language What-If Crisis Simulator**: Simulates high-stress disaster scenarios (mass-casualty events, respiratory epidemics, ICU contamination, nurse strikes) with automated parameter extraction and HICS protocol recommendations.
-5. **Multi-Model AI Intelligence & NL2SQL Assistant**: Features an xAI Grok-powered autonomous agent with read-only hospital tools, a floating AI Executive Summarizer, and a trained domain-specific NL2SQL query engine.
-6. **Resilient Dual-Engine Data Layer**: Connects to serverless Neon PostgreSQL Cloud with automated schema migration, while guaranteeing zero-downtime offline fallback to local SQLite and verified CSV telemetry.
-7. **NIST-Compliant Security & RBAC**: PBKDF2-HMAC-SHA256 password hashing (100,000 iterations), tamper-resistant audit logging, and strict role segregation between Hospital Administrators and Admission Officers.
+### The Problem vs. The Solution
+* **The Forecasting Challenge:** Predicting future hospital arrivals is distinct from optimizing resources. Naive projections often suffer from future-target data leakage and understate operational variance during crisis surges.
+* **The Optimization Challenge:** Operational shortages cannot be solved by simply hoping for more beds. Mathematical reallocation must satisfy hard clinical compatibility constraints, respect licensed department ceilings, and make remaining shortages transparent.
+* **The VitalOptima Solution:** An administrative decision-support platform designed to give clinical leaders forward-looking situational awareness. VitalOptima pairs a leakage-free machine learning forecaster with a Google OR-Tools Mixed-Integer Linear Program (MILP) solver and an interactive crisis simulator, producing transparent, human-reviewed operational recommendations.
 
-> **⚠️ Clinical Safeguard Notice:**
-> VitalOptima is strictly an administrative operations, capacity planning, and logistics decision-support platform. It does **not** make autonomous clinical triage, diagnosis, or medical treatment decisions. All patient admission distributions, bed assignments, and operational simulations use authorized, de-identified synthetic hospital census telemetry.
+> **Operational Decision Support Boundary:**  
+> VitalOptima is strictly an administrative and logistical decision-support system. It **does not** perform autonomous clinical diagnoses, prescribe therapy, or make triage decisions. All optimization proposals require human administrator review and authorization.
 
 ---
 
-## ✨ Key Platform Features & Modules
+## How VitalOptima Works
 
-| Module | Core Functionality | Primary Tech Stack | Target Role |
-| :--- | :--- | :--- | :--- |
-| **Command Center Dashboard** | Live operational KPIs, donut utilization gauges, departmental occupancy matrix, live alert drawer, and telemetry activity feed. | Streamlit, Plotly, Custom Glassmorphic CSS | Hospital Administrator, CMO |
-| **Admission Officer Workspace** | Patient registration, ACID-compliant bed allocation, concurrency mutex lock, live admitted roster, and safe discharge workflow. | SQLite/PostgreSQL, Threading Locks, Streamlit Fragment Polling | Admission Officer, Triage Nurse |
-| **Demand Forecasting Engine** | 24-hour forward emergency arrivals and admission trajectories with cyclic sine/cosine circadian encoding and 95% CI bands. | Scikit-learn Random Forest, Ridge, NumPy, Pandas | Operations Director, Forecaster |
-| **OR-Tools Resource Optimizer** | Constrained Mixed-Integer Linear Programming (MILP) solving bed, nurse float pool, and OR allocations with penalty weights. | Google OR-Tools, Linear Solver (CBC/SCIP) | Hospital Admin, Operations |
-| **What-If Crisis Simulator** | Interactive slider stress testing and domain-trained NLP crisis inquiry parser simulating mass-casualty and epidemic events. | Python NLQ Parser, Monte Carlo Simulation | Disaster Committee, Admin |
-| **AI Insights & Grok Agent** | Autonomous multi-turn reasoning, allowlisted read-only analytical tool execution, and deterministic offline fallback. | xAI Grok API, OpenAI SDK, Allowlisted Tools | Chief Medical Officer, Admin |
-| **Natural Language Query (NL2SQL)** | Domain-trained English-to-SQL query engine translating natural human questions into parameterized SQL queries with executive explanations. | Custom NL2SQL Engine, SQLAlchemy, Regex | Hospital Analysts, Admin |
-| **Blood Bank & Transfusion Reserves** | Real-time tracking of 8 blood groups (A±, B±, AB±, O±), PRBC/platelet/FFP inventory, cross-matched units, and universal donor (O-) deficit alerts. | PostgreSQL/SQLite, CSV Telemetry | Blood Bank Lead, Surgery |
-| **Critical Supplies & Consumables** | 30-day consumable telemetry, 7-day rolling burn rates, days of supply remaining, automated reorder triggers, and stockout PO notifications. | Pandas, Predictive Burn Rate Model | Procurement, Supply Chain |
-| **PostgreSQL & Records Explorer** | Interactive cloud database explorer with raw SQL query terminal, table inspection, schema viewer, and CSV telemetry exports. | Neon Serverless PostgreSQL, SQLAlchemy 2.0 | Database Administrator, Analyst |
-| **Administrative Settings Console** | User provisioning, role assignment, active status toggling, password resets, and tamper-evident security audit logs. | PBKDF2-HMAC-SHA256, Audit Logger | System Administrator |
-| **Floating AI Hospital Summarizer** | Pinned slide-over executive digest generating 7-part operational analyses with contextual follow-up Q&A and clipboard export. | LLM (Grok/Gemini/OpenAI) + Rule Fallback | Hospital Administrator |
+VitalOptima links predictive telemetry, scenario modeling, mathematical optimization, and administrative sign-off into a closed-loop 7-step workflow:
 
----
+```mermaid
+flowchart LR
+    A["1. Forecast Demand\n(3-Way Split ML)"] --> B["2. Detect Shortages\n(Census vs Thresholds)"]
+    B --> C["3. Configure Crisis\n(Stress Parameters)"]
+    C --> D["4. Optimize Allocation\n(OR-Tools MILP)"]
+    D --> E["5. Explain Tradeoffs\n(Deterministic/LLM)"]
+    E --> F["6. Administrator Approval\n(Human-in-the-Loop)"]
+    F --> G["7. Tamper-Evident Audit\n(SHA-256 Hash Chain)"]
+```
 
-## 📸 Command Center & Module Walkthrough
-
-### 1. Hospital Command Center Dashboard (`ui/views/dashboard.py`)
-- **Real-Time Operational KPIs**: General Beds (300 total, 238 occupied, 79% occupancy), ICU Utilization (30 beds, 26 occupied, 87% critical rate), Staff Shift Coverage (142 active on Morning Shift, 82% coverage), OR Availability (18 suites, 15 active, 83% utilization).
-- **Interactive Donut Gauges**: High-contrast, color-coded donut meters reflecting real-time capacity thresholds (Green < 80%, Amber 80–89%, Red ≥ 90%).
-- **24-Hour Predictive Demand vs. Capacity**: Hourly census forecast tracking emergency arrivals against operational department ceilings, with peak arrival alerts (92 arrivals at 15:00 IST).
-- **Live Alert Drawer**: Priority-categorized constraints (ICU capacity warning, OR suite congestion, nurse float pool shortages, fluid supply alerts).
-- **Departmental Occupancy Matrix**: Live progress bars tracking Emergency, Internal Medicine, Surgery, Pediatrics, ICU, and Maternity wards.
-- **Shift Telemetry & Indian Standard Time (IST) Clock**: Dynamically updates greeting, current clinical shift lead (Dr. Ramesh Patel / Dr. Priya Sharma / Dr. Vikram Sethi), and active shift hours.
-
-### 2. Admission Officer Workspace (`ui/views/admission_workspace.py`)
-- **Patient Registration Form**: Captures patient name, age, gender, assigned department, target bed type (General Inpatient vs. ICU), triage acuity level (Level 1 Resuscitation to Level 5 Non-Urgent), and clinical admitting notes.
-- **ACID-Compliant Concurrency Control**: Uses an internal re-entrant threading lock (`_ALLOCATION_LOCK`) to guarantee that concurrent admissions across multiple terminals never double-allocate the same physical bed.
-- **Dynamic Bed Number Allocation**: Automatically generates human-readable bed identifiers (e.g. `GEN-PED-04`, `ICU-BED-02`) based on real-time availability.
-- **Active Inpatient Roster & Live Search**: Filterable table showing admitted patients, admitting officers, admission timestamps, and elapsed length of stay.
-- **Safe Patient Discharge**: One-click discharge action that updates patient status, records discharge timestamp, logs the event in the audit trail, and immediately frees the bed for incoming emergency patients.
-- **Sub-15s Cross-Session Polling**: Uses Streamlit fragment polling (`@st.fragment(run_every=8)`) to propagate cross-terminal updates without requiring manual page reloads.
-
-### 3. Natural Language What-If Crisis Simulator (`models/simulator_nlp.py`)
-- **Dual Interface**: Interactive sliders for quantitative parameter tuning alongside a domain-trained natural language inquiry box.
-- **Curated Disaster Scenarios**:
-  - *Mass Casualty Trauma Surge*: +85% emergency volume, 10 ICU beds damaged, 5% staff deficit.
-  - *Severe Staff Viral Outbreak*: +40% patient wave, 35% clinical staff absenteeism.
-  - *Critical ICU Bio-Contamination*: 50% ICU beds locked down for decontamination, +20% surge.
-  - *Winter Respiratory Epidemic*: +65% pediatric/medicine surge, 25% ICU bed loss.
-- **Domain NLP Entity Extraction**: Evaluates conversational queries (e.g., *"What happens if an 80% patient surge hits during an emergency?"*) to extract numerical stress parameters, identify target wards, and calculate departmental collapse timelines.
-- **Actionable Mitigations**: Recommends standardized Hospital Incident Command System (HICS) operational protocols, elective surgery cancellation triggers, and overflow ward activation.
-
-### 4. Blood Bank & Critical Consumables Inventory
-- **8 Blood Groups Tracked**: Real-time units available, units cross-matched/reserved for surgeries, net unreserved buffer, minimum safety reserve, daily burn rates, days of supply, and storage temperatures (+2°C to +6°C for PRBC, -18°C for FFP, +20°C to +24°C with agitation for Platelets).
-- **Universal Donor (O-) Deficit Warning**: Immediate high-visibility alarm when emergency unreserved O- PRBC drops below the mandatory trauma threshold (10 units).
-- **Consumables Stockout Prevention**: Predictive tracking for N95 respirators, IV infusion sets, surgical gloves, normal saline, oxygen cylinders, and antibiotics with automatic reorder status based on supplier lead times.
+1. **Forecast Expected Demand:** Fits non-leaky autoregressive features on daily hospital census telemetry to forecast forward patient volume.
+2. **Identify Possible Shortages:** Evaluates projected arrivals against departmental staffing and staffed bed capacity ceilings.
+3. **Configure an Emergency Scenario:** Applies validated disaster parameters (surge percentage, damaged ICU beds, staff absenteeism) in the crisis simulator.
+4. **Optimize Resource Allocation:** Google OR-Tools MILP formulates optimal patient-to-department assignments enforcing hard capacity and clinical compatibility constraints.
+5. **Explain Remaining Shortages:** Transparently reports binding constraints, saturated units, and unmet patient demand.
+6. **Obtain Administrator Approval:** The authorized administrator reviews the proposed reallocation, modifies parameters if needed, and signs off.
+7. **Record Decision in Audit Trail:** Records the operational decision into a cryptographically linked, append-only SHA-256 audit log.
 
 ---
 
-## 🏗️ System Architecture & Data Flow
+## System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph DataSources["💾 Data & Storage Layer"]
-        PG[("Neon Cloud PostgreSQL\n(Serverless / Connection Pool)")]
+    subgraph Presentation["🖥️ User Interface Layer (Streamlit 1.40+)"]
+        NAV["Role-Based Navigation & Session Manager"]
+        DASH["Hospital Command Center Dashboard"]
+        FC_UI["Demand & Bed Occupancy Forecasting"]
+        OPT_UI["Resource Allocation & Solver Explorer"]
+        SIM_UI["Crisis Simulator & What-If Studio"]
+        ADMIT_UI["Patient Admission & Discharge Workspace"]
+        AUDIT_UI["Audit Log & Security Console"]
+    end
+
+    subgraph DomainServices["🛡️ Domain & Security Services"]
+        AUTH_SVC["Auth & RBAC Service\n(PBKDF2-HMAC-SHA256: 600k iters)"]
+        ADMIT_SVC["ACID Admission Service\n(Bed Uniqueness & Thread Mutex)"]
+        AI_GW["AI Provider Gateway\n(Deterministic Analytics Engine / Grok / Kompact Adapter)"]
+    end
+
+    subgraph ComputationalEngines["⚙️ Analytical & Mathematical Engines"]
+        FORECASTER["Demand Forecaster\n(Random Forest + Ridge Regression\nStrict 3-Way Chronological Split)"]
+        OPTIMIZER["Resource Optimizer\n(Google OR-Tools MILP Solver\nPure-Python Priority Fallback)"]
+        VALIDATOR["Independent Allocation Validator\n(Hard Constraints & Clinical Rules)"]
+        SIMULATOR["Crisis Stress Simulator\n(Parametric Disaster Dynamics)"]
+    end
+
+    subgraph DataPersistence["💾 Dual-Engine Data & Audit Layer"]
         SQLITE[("Local SQLite Database\n(db/vitaloptima.db)")]
-        CSV["Verified CSV Telemetry\n(365-Day Census, Inventory, Roster)"]
-        SYNC["Schema Sync & Migration Engine\n(db/sync_to_postgres.py)"]
-        PG <--> SYNC <--> SQLITE
-        CSV --> SYNC
+        POSTGRES[("Neon Cloud PostgreSQL\n(Optional Primary Sync)")]
+        AUDIT_LOG[("Tamper-Evident Audit Trail\n(SHA-256 Canonical JSON Chain)")]
     end
 
-    subgraph CoreEngines["⚙️ Analytical & Mathematical Engines"]
-        ML["Machine Learning Forecaster\n(Random Forest + Circadian Sine/Cosine)"]
-        MILP["Google OR-Tools MILP Solver\n(Bed, Nurse & OR Optimization)"]
-        SIM["Crisis Stress Simulator\n(Deterministic Dynamics & Monte Carlo)"]
-        NLQ["Domain NL2SQL & NLP Parser\n(Trained Entity Extractor)"]
-        GROK["xAI Grok Autonomous Agent\n(Allowlisted Read-Only Tools)"]
-    end
+    NAV --> AUTH_SVC
+    DASH & FC_UI --> FORECASTER
+    OPT_UI --> OPTIMIZER --> VALIDATOR
+    SIM_UI --> SIMULATOR --> OPTIMIZER
+    ADMIT_UI --> ADMIT_SVC
+    AUDIT_UI --> AUTH_SVC
 
-    subgraph ServiceLayer["🛡️ Business & Security Services"]
-        AUTH["NIST PBKDF2 Auth & RBAC\n(ADMIN vs ADMISSION_OFFICER)"]
-        ADMIT["ACID Admission Service\n(Concurrency Mutex Locking)"]
-        SUMM["AI Dashboard Summarizer\n(7-Part Analysis & Rule Fallback)"]
-        AUDIT["Tamper-Resistant Audit Logger\n(Security & Decision Logs)"]
-    end
-
-    subgraph PresentationLayer["💻 Streamlit Command Center UI"]
-        DASH["📊 Hospital Operations Dashboard"]
-        ADM_UI["🏥 Admission Officer Workspace"]
-        FC_UI["📈 Predictive Demand Forecasting"]
-        OPT_UI["⚙️ Resource Optimization Workbench"]
-        SIM_UI["🎛️ What-If Crisis Simulator"]
-        AI_UI["🤖 Grok AI Insights & Improvement Agent"]
-        INV_UI["📦 Inventory & Blood Bank Reserves"]
-        EXP_UI["🗄️ PostgreSQL Historical Explorer"]
-        SET_UI["⚙️ Settings & Accessor Management"]
-        FLOAT["✨ Floating Hospital Insights Assistant"]
-    end
-
-    DataSources --> CoreEngines
-    DataSources --> ServiceLayer
-    CoreEngines --> ServiceLayer
-    ServiceLayer --> PresentationLayer
+    AUTH_SVC & ADMIT_SVC --> SQLITE & POSTGRES
+    AUTH_SVC --> AUDIT_LOG
 ```
 
 ---
 
-## 🗄️ Dual-Engine Database Architecture
+## Core Features
 
-VitalOptima uses a resilient dual-database design ensuring enterprise scalability in cloud deployments and 100% uptime during offline hackathon demonstrations:
+### 1. Forecasting Intelligence
+* **Leakage-Free Feature Engineering:** All autoregressive lags (`lag_1`, `lag_7`) and rolling statistics are calculated strictly on shifted series (`shift(1)`). Warmup rows are dropped to eliminate backward-filling (`bfill`) leakage.
+* **3-Way Chronological Partition:** Strict separation into Training (70% / 250 days), Calibration (15% / 53 days), and Untouched Test (15% / 55 days) periods.
+* **Calibrated Prediction Intervals:** Residual quantiles are estimated exclusively on the held-out calibration set and evaluated on the untouched test split.
+* **Derived Diurnal Hourly Distribution:** Distinguishes genuine daily telemetry forecasts from illustrative hourly profiles derived using circadian diurnal weights.
 
-```
-                                  ┌──────────────────────────────────────────────┐
-                                  │           Application Data Gateway           │
-                                  └──────────────────────┬───────────────────────┘
-                                                         │
-                                        ┌────────────────┴────────────────┐
-                                        ▼                                 ▼
-                         [Primary: Neon Cloud PostgreSQL]   [Fallback: Local SQLite & CSV]
-                         • Serverless cloud instance        • Zero configuration required
-                         • SQLAlchemy 2.0 connection pool   • Embedded in db/vitaloptima.db
-                         • ACID relational schema           • In-memory threading mutex locks
-                         • Multi-user concurrent access     • Zero-downtime offline fallback
-```
+### 2. Constraint-Aware Resource Optimization
+* **Mathematical Formulation:** Formulated as a Mixed-Integer Linear Program (MILP) solved via Google OR-Tools (`CBC` / `SCIP` / `GLOP`).
+* **Hard Constraints Enforced:**
+  - Physical bed capacity limits per clinical department.
+  - Clinical compatibility matrix (e.g., critical care patients strictly routed to ICU; pediatric patients strictly routed to Pediatrics).
+  - Non-negative integer allocation variables.
+* **Soft Acuity Penalties:** Acuity-weighted penalties prioritize high-acuity patients (ICU: 1000, Trauma: 800) over lower-acuity units, while transfer penalties discourage unnecessary cross-department boarding.
+* **Slack Unmet-Demand Modeling:** When demand exceeds physical hospital capacity, slack variables absorb excess influx, ensuring solver feasibility while explicitly reporting unallocated patients as shortages.
+* **Pure-Python Priority Fallback:** If OS security policies (e.g., Windows Defender Application Control / AppLocker) restrict C++ solver DLL loading, the optimizer automatically switches to an exact priority-constrained linear fallback that satisfies identical hard constraints.
+* **Independent Validator:** `validate_allocation()` validates returned solutions against physical capacity and compatibility rules independently of the solver's internal objective score.
 
-### Relational Schema Tables (`db/schema.py`)
-1. **`patient_admissions`**: Patient ID, demographics, department, bed type, bed number, triage priority, admitting officer, timestamps, and discharge status.
-2. **`hospital_census_daily`**: 365 days of historical admissions, emergency arrivals, ICU census, discharges, surgeries scheduled, and average length of stay.
-3. **`department_resources`**: Real-time total, occupied, unavailable, and available bed capacities across departments.
-4. **`staffing_roster`**: Morning, Evening, and Night shift rosters, nurse-to-patient ratios, roles, and mandatory rest hours.
-5. **`blood_bank_inventory`**: Real-time units available, cross-matched reservations, critical thresholds, shelf-life days, and status.
-6. **`inventory_supplies`**: Consumable SKUs, daily consumption burn rates, closing stock, reorder thresholds, and lead times.
-7. **`demand_forecast_hourly`**: 24-hour predictive arrivals, 95% upper/lower confidence bounds, and capacity limits.
-8. **`decision_log`**: Administrator approvals, modifications, rejections, rationale, and timestamps.
-9. **`users`**: Usernames, PBKDF2 password hashes, cryptographic salts, role assignments, and active flags.
-10. **`audit_logs`**: Security events, login attempts, patient admissions, discharges, and role adjustments.
-11. **`system_alerts` & `recent_activity`**: High-priority operational alerts and live telemetry logs.
+### 3. Emergency Scenario Simulation
+* **Parametric Crisis Shocks:** Simulates mass-casualty trauma arrivals (+85% surge), infectious disease waves (+60% surge), ICU bio-contamination (10 damaged beds), or nursing strikes (35% absenteeism).
+* **Coupled Optimization:** Feeds the shocked hospital state directly into the optimizer to compute mathematically feasible reallocations.
+* **Truthful Before-and-After Comparisons:** Computes baseline and mitigated metrics from identical scenario states, reporting resolved allocations, binding bottlenecks, and remaining unmet patient demand.
 
----
+### 4. Admission Management & Concurrency Safety
+* **ACID Invariants:** Patient admission, bed allocation, and department capacity recalculation execute within atomic database transactions.
+* **Partial Unique Index:** SQLite and PostgreSQL schemas enforce `idx_active_bed_occupancy` (`UNIQUE (bed_number) WHERE status = 'Admitted'`), preventing simultaneous double allocation of the same bed across concurrent sessions.
+* **Idempotency Protection:** Admission request keys prevent duplicate patient registrations from repeated form submissions.
+* **Safe Discharge Workflow:** Discharging a patient frees their bed, increments available departmental capacity, and logs the discharge event.
 
-## 🧮 Mathematical Formulation (OR-Tools MILP)
-
-VitalOptima formulates clinical bed, nursing float pool, and surgical suite allocations as a constrained Mixed-Integer Linear Program (MILP) solved using Google OR-Tools:
-
-### 1. Sets and Indices
-- $P$: Set of patient triage classes ($\text{Emergency Trauma}, \text{ICU Critical}, \text{General Medical}, \text{Elective Surgical}, \text{Pediatric}$).
-- $D$: Set of hospital departments ($\text{Emergency}, \text{ICU}, \text{Internal Medicine}, \text{Surgery}, \text{Pediatrics}, \text{Maternity}$).
-- $T$: Time periods / shifts ($\text{Morning}, \text{Evening}, \text{Night}$).
-
-### 2. Decision Variables
-- $x_{p,d} \in \mathbb{Z}_{\ge 0}$: Number of patients of triage class $p$ allocated to department $d$.
-- $\text{Unmet}_p \in \mathbb{Z}_{\ge 0}$: Number of unallocated or deferred patients of class $p$.
-- $s_{d} \in \mathbb{Z}_{\ge 0}$: Supplemental float pool nursing staff allocated to department $d$.
-
-### 3. Objective Function
-$$\min \sum_{p \in P} w_p \cdot \text{Unmet}_p + \sum_{p \in P} \sum_{d \in D} c_{p,d} \cdot x_{p,d} + \sum_{d \in D} \gamma_d \cdot s_d$$
-
-Where:
-- $w_p$: Critical priority penalty for unmet demand ($w_{\text{ICU}} = 1000$, $w_{\text{Trauma}} = 800$, $w_{\text{General}} = 100$, $w_{\text{Elective}} = 10$).
-- $c_{p,d}$: Secondary clinical transfer penalty (e.g. allocating medical overflow into surgical beds incurs penalty $c = 25$, while incompatible placements are strictly prohibited with $c = \infty$).
-- $\gamma_d$: Cost weight of deploying float pool nursing staff.
-
-### 4. Constraints
-1. **Demand Balance**:
-   $$\sum_{d \in D} x_{p,d} + \text{Unmet}_p = \text{Demand}_p \quad \forall p \in P$$
-2. **Physical Department Bed Capacity**:
-   $$\sum_{p \in P} x_{p,d} \le \text{AvailableBeds}_d \quad \forall d \in D$$
-3. **Nurse-to-Patient Clinical Safety Ratios**:
-   $$\sum_{p \in P} \alpha_{p} \cdot x_{p,d} \le \text{NursesOnDuty}_d + s_d \quad \forall d \in D$$
-   *(e.g., ICU requires $\alpha = 0.5$ (1:2 ratio), while General Medical requires $\alpha = 0.2$ (1:5 ratio)).*
-4. **Clinical Compatibility Matrix**:
-   $$x_{p,d} = 0 \quad \forall (p,d) \notin \text{ClinicallyFeasiblePairs}$$
-5. **Float Pool Availability Ceiling**:
-   $$\sum_{d \in D} s_d \le \text{MaxFloatPoolStaff}$$
+### 5. Evidence-Grounded AI Architecture
+* **Calculations Outside the Model:** Forecasts, allocations, and scenario outcomes are computed exclusively by deterministic mathematical engines. The language model only interprets and explains structured analytical results.
+* **100% Offline Deterministic Fallback:** Operates with full functionality without external API keys or network access via `DeterministicProvider`.
+* **xAI Grok Integration:** Optional external LLM integration via OpenAI-compatible endpoints with allowlisted read-only analytical tool execution.
+* **Future Kompact Scaffold:** `KompactAdapter` provides an isolated integration boundary for future local edge inference engines.
 
 ---
 
-## 📈 Machine Learning Demand Forecaster
+## Empirical Forecast Evaluation
 
-VitalOptima features a production machine learning pipeline validated on **365 days of hospital census telemetry** (`hospital_census_daily.csv`):
+Evaluated on 365 daily observations from authoritative hospital census telemetry (`data/hospital_census_daily.csv`), using a strict chronological 3-way partition:
+* **Training Period:** Days 1–250 (70%)
+* **Calibration Period:** Days 251–303 (15%)
+* **Untouched Held-Out Test Period:** Days 304–358 (15%, 55 days)
 
-### Model Architecture & Feature Engineering
-- **Circadian Cyclic Encoding**: Transforms continuous hour-of-day ($h \in [0, 23]$) into trigonometric harmonic coordinates to model circadian rhythm without boundary discontinuities:
-  $$\text{Hour}_{\sin} = \sin\left(\frac{2\pi \cdot h}{24}\right), \quad \text{Hour}_{\cos} = \cos\left(\frac{2\pi \cdot h}{24}\right)$$
-- **Temporal Seasonality**: One-hot encoded day of week, weekend flags, and elective surgical scheduling calendar.
-- **Autoregressive Moving Averages**: Lag features ($t-1, t-2, t-24$) and 7-day rolling census averages.
-- **Ensemble Model**: Scikit-Learn `RandomForestRegressor` with 100 estimators, max depth 12, and min samples split 4.
+### Benchmark Comparisons on Identical Held-Out Test Rows
 
-### Benchmark Evaluation Metrics (`ml_outputs/metrics.csv`)
-| Target Horizon | Evaluated Model | MAE | RMSE | WAPE (%) | Performance Notes |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Next-Day Admissions** | **Random Forest (VitalOptima)** | **5.779** | **7.703** | **11.58%** | **45.7% error reduction over baseline** |
-| | Ridge Regression | 6.112 | 7.687 | 12.25% | Linear regularized baseline |
-| | Seasonal Naive ($t-7$) | 7.903 | 10.876 | 15.83% | Day-of-week recurrence |
-| | Persistence ($t-1$) | 10.653 | 13.040 | 21.34% | Previous day carryover |
-| **Emergency Arrivals** | **Random Forest (VitalOptima)** | **16.765** | **22.021** | **9.13%** | **Superior peak surge capture** |
-| | Ridge Regression | 17.036 | 22.348 | 9.28% | Close linear fit |
-| | Seasonal Naive ($t-7$) | 24.000 | 35.186 | 13.07% | High weekend variance |
-| | Persistence ($t-1$) | 21.444 | 26.596 | 11.68% | High lag error |
-| **ICU Admissions** | **Random Forest (VitalOptima)** | **1.672** | **1.961** | **34.21%** | **Captures rare critical care events** |
-| | Ridge Regression | 1.663 | 2.008 | 34.01% | Competitive linear performance |
-| | Persistence ($t-1$) | 2.292 | 2.761 | 46.88% | High stochastic miss rate |
+| Model Architecture | MAE (Arrivals) | RMSE | WAPE (%) | Evaluation Type |
+| :--- | :---: | :---: | :---: | :--- |
+| **Persistence ($t-1$)** | 21.38 | 26.64 | 11.50% | Naive Baseline |
+| **Seasonal Naive ($t-7$)** | 27.13 | 38.85 | 14.58% | Seasonal Baseline |
+| **Ridge Regression ($\alpha=1.0$)** | 16.43 | 22.60 | 8.83% | Regularized Linear Baseline |
+| **Random Forest (VitalOptima)** | 16.75 | 22.73 | 9.01% | Primary ML Model |
 
----
+*Both ML models achieve >21% error reduction over persistence baselines on held-out test data.*
 
-## 🤖 Grok AI Insights & Autonomous Agent
+### Calibrated Prediction Interval Metrics
+* **Calibration Method:** Empirical quantiles ($q_{0.05}, q_{0.95}$) of residuals fitted exclusively on the 53-day calibration set.
+* **Nominal Target Coverage:** 90.0%
+* **Calibration Quantiles:** Lower $q_{0.05} = -22.38$, Upper $q_{0.95} = +20.14$ (Average Width: 42.52 arrivals)
+* **Observed Held-Out Test Coverage:** **70.9%** (39 of 55 held-out test observations)
+* **Honest Evaluation Disclosure:** The held-out test window captures an unseasonal winter surge with elevated variance compared to the preceding autumn calibration window. Coverage is reported honestly without artificial clamping.
 
-VitalOptima integrates an autonomous executive intelligence engine powered by xAI Grok (`grok-2-latest`) via the OpenAI-compatible SDK:
-
-### Agent Tool Registry (`src/agent_tools.py`)
-To prevent unauthorized database writes or arbitrary execution, the Grok agent operates within a **strictly bounded, allowlisted read-only tool environment**:
-1. `get_historical_trends(metric, department)`: Queries 365-day arrival patterns, peak census days, and length-of-stay distributions.
-2. `get_forecast_summary(horizon_days)`: Extracts multi-day projected inpatient census, forward peaks, and capacity risk days.
-3. `get_forecast_evaluation()`: Retrieves benchmark model performance metrics (MAE, RMSE, WAPE) across model architectures.
-4. `check_capacity_risks()`: Identifies departments operating above 80% warning and 90% critical capacity limits.
-5. `check_staffing_shortages()`: Analyzes nurse-to-patient ratio deficits across Morning, Evening, and Night shifts.
-6. `check_inventory_alerts()`: Scans medical consumables and blood reserves for stockouts or low-buffer states.
-7. `run_demand_what_if(surge_pct, icu_loss_beds, staff_reduction_pct)`: Executes deterministic stress simulations on the fly.
-
-### Deterministic Offline Fallback Mode
-If no external API key is configured or network timeouts occur, VitalOptima's **Deterministic Analytics Engine** automatically generates structured executive analyses directly from local telemetry, guaranteeing **100% demo availability without internet or paid API dependencies**.
+*The complete reproducible evaluation artifact is stored in [ml_outputs/forecast_evaluation.json](ml_outputs/forecast_evaluation.json).*
 
 ---
 
-## 🔒 Security & Role-Based Access Control (RBAC)
+## Quick Start Guide
 
-VitalOptima enforces defense-in-depth security matching healthcare compliance standards:
+### Prerequisites
+* Python 3.11 or higher
+* Git
 
-```
-                           ┌──────────────────────────────────────────────┐
-                           │          Centralized Authentication          │
-                           │  • NIST PBKDF2-HMAC-SHA256 (100k Iterations) │
-                           │  • Cryptographic 16-Byte Random Salt         │
-                           └──────────────────────┬───────────────────────┘
-                                                  │
-                                 ┌────────────────┴────────────────┐
-                                 ▼                                 ▼
-                     [Role: HOSPITAL_ADMIN]             [Role: ADMISSION_OFFICER]
-                     • Command Center Dashboard         • Admission Officer Workspace
-                     • Grok AI Insights & Agent         • Live Patient Registration
-                     • Resource Optimization Solver     • Safe Bed Allocation
-                     • What-If Crisis Simulator         • Inpatient Roster Tracking
-                     • Consumables & Blood Bank         • Patient Discharge Workflow
-                     • PostgreSQL Records Explorer      • Restricted from Settings/Admin
-                     • User Provisioning & Settings
-```
-
-### Password Hashing Specification (`services/auth_service.py`)
-- **Algorithm**: PBKDF2-HMAC-SHA256
-- **Work Factor**: 100,000 iterations
-- **Salt Generation**: `secrets.token_hex(16)` (cryptographically secure per-user salt)
-- **Session Verification**: Server-side session authentication with defense-in-depth permission checking (`require_permission`) on all protected views.
-
----
-
-## 🚀 Quick Start & Installation Guide
-
-### 1. Prerequisites
-- **Python 3.10+** (Tested on Python 3.11)
-- **Git**
-
-### 2. Clone and Setup Environment
-```bash
-# Clone the repository
-git clone https://github.com/your-team/VitalOptima.git
+### Windows PowerShell Quickstart
+```powershell
+# 1. Clone repository
+git clone https://github.com/VenkataMadhuSudan/VitalOptima.git
 cd VitalOptima
 
-# Create and activate a Python virtual environment
+# 2. Create virtual environment
 python -m venv venv
-
-# Windows PowerShell:
 .\venv\Scripts\Activate.ps1
-# Linux / macOS:
-source venv/bin/activate
 
-# Install locked production dependencies
+# 3. Install dependencies
 pip install -r requirements.txt
-```
 
-### 3. Configure Environment Variables
-Copy the template configuration file:
-```bash
-cp .env.example .env
-```
-Open `.env` and configure your settings:
-```ini
-# Neon Cloud PostgreSQL Connection String (Optional - falls back to SQLite if omitted)
-DATABASE_URL=postgresql://neondb_owner:password@ep-solitary-frost-az28whg1-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+# 4. Configure environment (optional: add API keys if available)
+Copy-Item .env.example .env
 
-# Application Settings
-APP_ENV=production
-APP_PORT=8501
-HOSPITAL_NAME="City General Hospital"
+# 5. Initialize database & seed operational records
+python -c "from db.database import init_db; init_db()"
 
-# xAI Grok API Key (Optional - falls back to deterministic rule engine if omitted)
-XAI_API_KEY=your_xai_api_key_here
-```
+# 6. Execute automated verification test suite
+python -m unittest discover tests
 
-### 4. Synchronize Database & Generate Telemetry
-Initialize the database tables and populate baseline census records:
-```bash
-# Run automated schema creation and data synchronization
-python db/sync_to_postgres.py
-```
-*(If PostgreSQL credentials are not configured, this script automatically sets up local `db/vitaloptima.db`).*
-
-### 5. Launch the Command Center
-```bash
+# 7. Start Streamlit Command Center
 streamlit run app.py
 ```
-Open your browser at **`http://localhost:8501`**.
 
----
+### Linux / macOS Bash Quickstart
+```bash
+# 1. Clone repository
+git clone https://github.com/VenkataMadhuSudan/VitalOptima.git
+cd VitalOptima
 
-## 🔑 Demo Credentials & Access Profiles
+# 2. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
 
-VitalOptima is pre-seeded with two role profiles for immediate evaluator and hackathon testing:
+# 3. Install dependencies
+pip install -r requirements.txt
 
-| Role | Username | Password | Permitted Views & Workspaces |
+# 4. Configure environment
+cp .env.example .env
+
+# 5. Initialize database
+python3 -c "from db.database import init_db; init_db()"
+
+# 6. Run automated tests
+python3 -m unittest discover tests
+
+# 7. Launch application
+streamlit run app.py
+```
+
+Access the application in your browser at `http://localhost:8501`.
+
+### Demo User Accounts
+
+| Role | Username | Password | Operational Access |
 | :--- | :--- | :--- | :--- |
-| **Hospital Administrator** | `admin` | `Admin@Vital2026!` | **Full Unrestricted Access**: Dashboard, Grok AI Insights, Resource Management, Demand Forecasting, Optimization Solver, What-If Simulator, Decision Log, Inventory & Blood Bank, PostgreSQL Explorer, Settings. |
-| **Admission Officer** | `admit_officer` | `Admit@Vital2026!` | **Dedicated Clinical Workspace**: Patient Registration, Real-Time Bed Allocation, Active Inpatient Roster, Bed Capacity Telemetry, Safe Patient Discharge. |
+| **Hospital Administrator** | `admin` | `Admin@Vital2026!` | Full administrative access: Command Center, Forecasting, Optimization, Crisis Simulator, Inventory, Audit Logs, User Settings |
+| **Admission Officer** | `admit_officer` | `Admit@Vital2026!` | Clinical admission access: Patient Registration, Bed Allocation, Active Inpatient Roster, Patient Discharge |
 
 ---
 
-## 🧪 Automated Testing & Verification Suite
+## Flagship Demo: Hospital Emergency Surge
 
-VitalOptima includes an enterprise-grade automated test suite spanning **8 comprehensive test files**:
+Follow this guided evaluator workflow to test the platform's core operational capabilities:
 
-```bash
-# Run core optimization and ML tests
-python tests/test_core.py
-
-# Run RBAC security and ACID admission workflow tests
-python -m unittest tests/test_rbac_and_admissions.py
-
-# Run Grok AI agent and tool registry tests
-python -m unittest tests/test_ai_agent_suite.py
-
-# Run blood bank NLQ natural language query tests
-python -m unittest tests/test_blood_bank_nlp.py
-
-# Run AI dashboard summarizer verification tests
-python -m unittest tests/test_dashboard_summarizer.py
-
-# Run what-if crisis simulator NLP tests
-python -m unittest tests/test_simulator_nlp.py
-
-# Run settings and summarizer follow-up QA tests
-python -m unittest tests/test_settings_and_summarizer_qa.py
-
-# Run real dataset validation tests
-python -m unittest tests/test_real_datasets.py
-```
-
-### What the Test Suites Validate:
-- `test_core.py`: Mathematical feasibility of Google OR-Tools solver, Random Forest forecaster output, simulator dynamics, and SQLite decision logging.
-- `test_rbac_and_admissions.py`: NIST PBKDF2 password hashing, salt uniqueness, permission boundaries, concurrent bed allocation mutex protection, and safe discharge bed release.
-- `test_ai_agent_suite.py`: Grok tool registry safety, read-only constraints, missing-key resilience, and deterministic fallback outputs.
-- `test_blood_bank_nlp.py`: Natural language entity extraction for all 8 blood groups, universal donor (O-) requests, and stockout queries.
-- `test_dashboard_summarizer.py`: Mathematical accuracy of 7-part operational digest, threshold evaluations, and alert classifications.
-- `test_simulator_nlp.py`: Natural language stress scenario interpretation, numerical surge extraction, and resilience scoring.
+1. **Log In:** Navigate to `http://localhost:8501` and log in as `admin` (`Admin@Vital2026!`).
+2. **Review Command Center:** Inspect the live operational KPIs, departmental occupancy meters, and the 24-hour predictive demand curve.
+3. **Examine Demand Forecasting:** Navigate to **Demand Forecasting**. Review the empirical 90% prediction intervals, baseline comparisons, and feature importance rankings.
+4. **Configure a Crisis Scenario:** Navigate to **What-If Crisis Simulator**. Select the **Mass Casualty Trauma Surge** preset (+85% arrival surge, 8 damaged ICU beds, 5% staff loss).
+5. **Run Simulation & Optimization:** Click **Run Scenario Stress Test**. Observe:
+   - *Before State:* ICU projected at 100% saturation with immediate bed shortages.
+   - *MILP Execution:* The solver executes in <15ms, allocating non-critical patients to flex overflow beds while prioritizing trauma cases.
+   - *Unmet Demand Disclosure:* Any remaining bed shortfalls are highlighted rather than hidden.
+   - *Independent Verification:* Check the green **Allocation Verified** indicator.
+6. **Administrator Sign-Off:** Review the dynamic mitigation actions and click **Approve Operational Decision**.
+7. **Verify Audit Trail:** Navigate to **Security Audit Logs**. Verify that the approved decision was committed to the append-only SHA-256 hash chain and click **Verify Log Cryptographic Integrity**.
 
 ---
 
-## 🛠️ CLI Pipeline & Predefined Scenarios
+## Database Safety & Dual-Engine Architecture
 
-In addition to the interactive web application, VitalOptima provides standalone CLI scripts for dataset generation, validation, ML model training, and stress scenario generation:
-
-### 1. Dataset Generation & Validation
-```bash
-# Generate clean de-identified baseline hospital telemetry:
-python src/generate_dataset.py
-
-# Run clinical telemetry audit and range integrity validation:
-python src/validate_dataset.py
-```
-
-### 2. Standalone Model Training & Overlay Forecaster
-```bash
-# Train Random Forest and Ridge Regression models on chronological 80/20 split:
-python src/ml_forecast.py
-
-# Simulate an active 5-day patient surge overlay (+50% arrival multiplier):
-python src/ml_forecast.py --surge-multiplier 1.5 --surge-days 5
-```
-> *Metrics and predictions are computed by the pipeline and written to `ml_outputs/`; they are **never** hardcoded in the raw dataset.*
-
-### 3. Predefined Test Scenarios (`python src/scenarios.py` → `data/scenarios/<name>/`)
-Runs offline stress scenario simulations without modifying baseline CSV telemetry:
-
-| Scenario Name | Description & Impact | Associated CLI Command |
-|---|---|---|
-| `emergency_surge` | Scales `forecast_demand` × 1.5 for ED, × 1.25 for general beds, and × 1.35 for ICU. | `python src/ml_forecast.py --surge-multiplier 1.5 --surge-days 5` |
-| `icu_capacity_loss` | Takes 8 ICU beds (5 MICU, 3 SICU) offline due to contamination/repairs; flags 3 displaced patients for relocation. | `python src/scenarios.py` |
-| `staff_shortage` | Induces a 25% nurse absenteeism shock across acute shifts; highlights float pool reallocation triggers. | `python src/scenarios.py` |
-| `supply_stockout` | Sets critical N95 respirators and surgical consumables to 0 units; triggers emergency procurement protocols. | `python src/scenarios.py` |
-
-
----
-
----
-
-## 📂 Repository File Structure
+VitalOptima supports an active-active dual-engine model:
 
 ```
-HC_08_VitalOptima/
-├── README.md                          # Comprehensive project documentation & architecture guide
-├── requirements.txt                   # Locked production Python dependencies
-├── app.py                             # Main Streamlit application entrypoint & role router
-├── config.py                          # Hospital baselines, shift logic, and IST clock
-├── .env                               # Active environment credentials (local/cloud)
-├── .env.example                       # Environment configuration template
-│
-├── assets/
-│   └── hospital_building.jpg          # Campus visual header for navigation sidebar
-│
-├── data/
-│   ├── blood_bank_inventory.csv       # Real-time blood group reserves, PRBC, and buffer units
-│   ├── demand_forecast.csv            # 24-hour hourly arrival and capacity trajectory
-│   ├── department_resources.csv       # Departmental capacities, occupancies, and staffed beds
-│   ├── departments.csv                # Core department baseline metadata
-│   ├── hospital_census_daily.csv      # 365 days of historical hospital census & arrivals
-│   ├── inventory_supplies.csv         # 30-day consumable telemetry, burn rates, and lead times
-│   ├── staffing_roster.csv            # Shift schedules, nurse roles, and rest constraints
-│   ├── synthetic_generator.py         # De-identified hospital telemetry generator
-│   ├── load_census_data.py            # Historical census loader and preprocessor
-│   └── save_all_datasets.py           # Dataset persistence and export utilities
-│
-├── db/
-│   ├── database.py                    # SQLite schema, CRUD operations, and default user seeding
-│   ├── nlp_query.py                   # Domain-specific Natural Language to SQL (NL2SQL) engine
-│   ├── postgres.py                    # Neon PostgreSQL connector with SQLAlchemy connection pooling
-│   ├── schema.py                      # SQLAlchemy ORM relational schema definitions
-│   ├── sync_to_postgres.py            # Automated schema migration and CSV synchronization
-│   └── vitaloptima.db                 # Persistent local SQLite database (resilient fallback)
-│
-├── ml_outputs/
-│   ├── forecast_next_days.csv         # Multi-day forward projected admissions and arrivals
-│   ├── metrics.csv                    # Evaluation benchmark comparison (MAE, RMSE, WAPE)
-│   └── test_predictions.csv           # Model test set predictions vs ground truth
-│
-├── models/
-│   ├── forecaster.py                  # ML arrival forecasting with RandomForestRegressor
-│   ├── optimizer.py                   # Google OR-Tools MILP resource allocation solver
-│   ├── simulator.py                   # What-if scenario simulation engine (sliders)
-│   └── simulator_nlp.py               # Conversational stress test simulator & NLP engine
-│
-├── services/
-│   ├── __init__.py                    # Services package initializer
-│   ├── admission_service.py           # ACID patient registration, bed allocation & safe discharge
-│   ├── auth_service.py                # NIST PBKDF2 hashing, session security & RBAC matrix
-│   └── dashboard_summarizer.py        # 7-part AI executive dashboard summarizer service
-│
-├── src/
-│   ├── agent_tools.py                 # Allowlisted read-only analytical tools for Grok agent
-│   ├── ai_analytics.py                # Hospital census analytics, capacity & staffing checks
-│   ├── generate_dataset.py            # Clinical dataset generation pipeline
-│   ├── grok_client.py                 # xAI Grok API client with deterministic fallback
-│   ├── ml_forecast.py                 # Multi-model training and evaluation harness
-│   ├── scenarios.py                   # Disaster scenario definitions and configurations
-│   ├── schemas.py                     # Data validation schemas
-│   └── validate_dataset.py            # Data validation routines
-│
-├── ui/
-│   ├── styles.py                      # Custom glassmorphic CSS stylesheet
-│   ├── components.py                  # Donut gauges, KPI metric cards, and Plotly charts
-│   ├── ai_summary_panel.py            # Slide-over floating AI Hospital Insights assistant
-│   └── views/
-│       ├── dashboard.py               # Hospital Operations Command Center view
-│       ├── admission_workspace.py     # Admission Officer patient registration & discharge
-│       ├── ai_insights.py             # Grok-Powered AI Insights & Improvement Agent
-│       ├── demand_forecast.py         # ML arrival forecasting analysis & feature importance
-│       ├── optimization.py            # Google OR-Tools recommendation review workbench
-│       ├── simulator.py               # What-if crisis stress simulator (sliders + NLP)
-│       ├── resource_mgmt.py           # Ward capacity, nursing roster, and OR block tracking
-│       ├── decision_log.py            # Human-in-the-loop audit trail & CSV export
-│       ├── postgres_explorer.py       # Cloud PostgreSQL terminal, schema viewer & query tool
-│       ├── login_view.py              # Secure authentication gateway & role selector
-│       └── settings_view.py           # Administrative accessor management & audit log console
-│
-└── tests/
-    ├── test_core.py                   # Validates OR-Tools solver, ML forecaster, and SQLite DB
-    ├── test_rbac_and_admissions.py    # Validates PBKDF2 hashing, RBAC matrix, and admission locks
-    ├── test_ai_agent_suite.py         # Validates Grok agent tools and deterministic fallback
-    ├── test_blood_bank_nlp.py         # Validates blood group NLP query entity extraction
-    ├── test_dashboard_summarizer.py   # Validates 7-part executive summarizer accuracy
-    ├── test_real_datasets.py          # Validates 365-day census records and consumable data
-    ├── test_settings_and_summarizer_qa.py # Validates user management and QA follow-up queries
-    └── test_simulator_nlp.py          # Validates conversational crisis inquiry parsing
+[Primary Cloud: Neon PostgreSQL] <---> [Automatic Sync Engine] <---> [Authoritative Local: SQLite 3.45+]
 ```
 
----
-
-## 🛡️ Clinical Governance, Ethics & Safety Disclosures
-
-1. **Non-Clinical Logistics Boundary**: VitalOptima is strictly engineered for logistical capacity planning, staff scheduling, supply chain monitoring, and administrative resource allocation. It **never** automates clinical triage classifications, medical diagnoses, medication prescribing, or patient treatment decisions.
-2. **De-Identified Synthetic Data & Zero-PII**: All patient demographic fields, admission records, and historical census entries utilize fully de-identified, synthetic data conforming to HIPAA Safe Harbor guidelines and clinical data privacy standards. Telemetry sent to LLM intelligence layers consists solely of aggregated departmental census numbers, shift counts, and inventory units. Zero Patient Health Information (PHI) is ever exposed.
-3. **Mandatory Human-in-the-Loop Governance**: No AI or mathematical recommendation is deployed automatically. Every bed reallocation, staff float shift, or elective surgery deferral requires explicit approval (Accept, Modify, or Reject) by an authorized clinical administrator, backed by an immutable SQLite/PostgreSQL audit trail.
-4. **Algorithmic Safety Constraints**: The Google OR-Tools MILP solver enforces hard clinical compatibility constraints ({p,d} = 0$ for incompatible departments) and sets critical penalties ({\text{ICU}} = 1000$) to prevent hazardous under-allocation of critical care resources.
-5. **Deterministic Fail-Safe Fallback**: If an external LLM API key expires or is unavailable, VitalOptima falls back seamlessly to deterministic, verified mathematical heuristics with 100% uptime.
-6. **Explainable AI & Transparent Trade-offs**: Feature importances, lag terms, and solver slack variables are visible to clinical leadership to ensure explainable decision support.
+* **Authoritative Operating Model:**
+  - Local SQLite (`db/vitaloptima.db`) serves as the default zero-setup authoritative database.
+  - If `DATABASE_URL` is configured, cloud Neon PostgreSQL is synchronized via SQLAlchemy connection pooling.
+  - If cloud network connectivity is lost, the platform transitions instantly to SQLite with zero downtime.
+* **Safe Migration Invariants:** Before creating `idx_active_bed_occupancy`, the migration runner inspects existing rows for historical duplicate active beds. If conflicts exist, they are logged as structured migration warnings without deleting user data or failing startup.
+* **Concurrency Protection:** Multi-threaded and multi-connection admission attempts for the same bed are serialized using SQLite `BEGIN IMMEDIATE` transactions and database-level unique constraints.
 
 ---
 
-## 👥 Development Team Schedule & Contributions
+## Security & Tamper-Evident Audit Trail
 
-*Developed for the 24-Hour National-Level Healthcare AI & Operations Hackathon*
+### Password Storage
+* **Algorithm:** PBKDF2-HMAC-SHA256 with 600,000 iterations (conforming to current OWASP Password Storage recommendations) and a cryptographically secure 16-byte random salt.
+* **Backward-Compatible Migration:** Existing accounts hashed with 100,000 iterations authenticate seamlessly and are transparently rehashed to the 600,000-iteration standard on login.
 
-| Team Member | Core Specialization | Project Contributions & Implemented Modules |
-| :--- | :--- | :--- |
-| **Member 1** | **AI & Mathematical Optimization** | • Google OR-Tools Mixed-Integer Linear Programming (MILP) solver formulation.<br>• Circadian Scikit-Learn Random Forest arrival demand forecasting engine.<br>• xAI Grok autonomous agent tool registry (`agent_tools.py`) and evidence package builder.<br>• Domain-trained Natural Language to SQL (NL2SQL) query engine (`nlp_query.py`). |
-| **Member 2** | **Backend & Cloud Architecture** | • Resilient Dual-Engine architecture (Neon Serverless PostgreSQL + local SQLite).<br>• ACID patient admission service with re-entrant concurrency mutex locking (`_ALLOCATION_LOCK`).<br>• NIST PBKDF2-HMAC-SHA256 authentication service and centralized RBAC matrix.<br>• Comprehensive 8-suite automated test framework (`tests/`). |
-| **Member 3** | **Frontend & Clinical Product Lead** | • Pixel-perfect Streamlit Command Center dashboard and custom glassmorphic stylesheet.<br>• Dedicated Admission Officer Workspace with sub-15s auto-syncing polling.<br>• Interactive What-If Crisis Simulator with natural language crisis inquiry box.<br>• Floating slide-over AI Hospital Insights assistant and Plotly donut gauges. |
+### Tamper-Evident Audit Hash Chain
+* **Canonical Serialization:** Every audit event is serialized into deterministic canonical JSON (strictly sorted keys, compact separators `(',', ':')`) prior to digest calculation, preventing field boundary ambiguity.
+* **Chained Digest:** Each event digest includes the previous record's SHA-256 hash (`prev_hash` $\to$ `record_hash`).
+* **Tamper Detection Capabilities:**
+  - Modified event contents $\to$ flagged as digest mismatch.
+  - Corrupted previous hash link $\to$ flagged as broken chain link.
+  - Dropped middle record $\to$ flagged as broken sequential link.
+  - Reordered events $\to$ flagged as sequence integrity violation.
+* **Documented Threat Model Limitation:** In a single modifiable database, an attacker with administrative root access could theoretically delete trailing records from the tail of the log without breaking the remaining chain. To fully mitigate trailing truncation, export trusted chain-head checkpoints to an external immutable ledger or write-once storage.
 
 ---
 
-<div align="center">
-  <b>VitalOptima</b> — <i>Smarter Hospitals. Better Decisions. Resilient Healthcare.</i><br>
-  Built with ❤️ for Healthcare Innovation • © 2026 VitalOptima Team
-</div>
+## Automated Testing & Verification
+
+The test suite includes 86 discoverable unit tests across 11 test modules:
+
+```powershell
+python -m unittest discover tests
+```
+
+### Verified Test Breakdown
+* `tests/test_forecast_integrity.py` (6 tests): Zero future-target leakage, lag definition correctness, 3-way split sizing, independent interval calibration, multi-model benchmarks, diurnal metadata labeling.
+* `tests/test_audit_hash_chain.py` (6 tests): Deterministic canonical JSON hashing, append verification, modified content detection, corrupted link detection, deleted middle record detection, concurrent multi-threaded append serialization.
+* `tests/test_admission_concurrency.py` (2 tests): Concurrent admission conflicts on identical beds, transparent password rehash-on-login.
+* `tests/test_rbac_and_admissions.py` (20 tests): Role authentication, unauthorized access rejection, ACID bed allocation, safe discharge, cache invalidation, audit logging.
+* `tests/test_dashboard_summarizer.py` (13 tests): Executive summarizer permissions, real telemetry utilization, zero denominator handling, offline fallback, caching deduplication.
+* `tests/test_settings_and_summarizer_qa.py` (7 tests): User provisioning, role assignment, active status toggling, password updates, profile management.
+* `tests/test_ai_agent_suite.py` (13 tests): Allowlisted analytical tools, tool dispatcher, insight schema validation, offline keyless mode, capacity bottleneck queries.
+* `tests/test_blood_bank_nlp.py` (7 tests): Blood bank dataset integrity, SQLite tables, universal donor (O-) deficit queries, platelet reserve queries.
+* `tests/test_core.py` (5 tests): Synthetic data integrity, forecaster 24h peak dynamics, optimizer feasibility, simulator stress metrics, decision persistence.
+* `tests/test_real_datasets.py` (5 tests): 365-day census schema, department capacity totals, medical supply stockout triggers, 7-day staffing roster shifts.
+* `tests/test_simulator_nlp.py` (2 tests): Natural language query intent extraction, conversational edge-case stress parameters.
 
 ---
 
-### 📋 Project & Hackathon Metadata
-- **Project Name:** VitalOptima (HC_08)
-- **Track:** AI-Based Hospital Resource Optimization & Clinical Decision Support
-- **Repository:** [https://github.com/VJH-2k26/HC_08_VitalOptima](https://github.com/VJH-2k26/HC_08_VitalOptima)
-- **License:** MIT License
+## Clinical & Responsible-Use Disclosures
 
+* **Decision Support Boundary:** VitalOptima is designed exclusively for administrative capacity planning, bed logistics, and operational surge forecasting. It is **not** an autonomous medical device, does not provide clinical diagnosis, and must not replace professional clinical judgment.
+* **Synthetic Data Disclosure:** Demonstrations and default database tables utilize 365 days of synthetic hospital census records, department configurations, and de-identified operational telemetry.
+* **Optimization Model Limitations:** Optimization outputs are mathematical recommendations derived from configured constraints (bed counts, nurse-to-patient ratios, clinical department mappings). Real-world implementation requires clinical supervisor review.
+
+---
+
+## Documentation Links
+
+* [Technical Audit & Architecture Baseline](docs/TECHNICAL_AUDIT.md) — Detailed engineering audit, verified defects, and architectural evolution.
+* [Technical Evaluator & Demo Guide](docs/HACKATHON_DEMO_GUIDE.md) — Step-by-step evaluator walkthrough and disaster scenario execution guide.
+* [Forecast Evaluation Artifact](ml_outputs/forecast_evaluation.json) — Reproducible machine-readable forecast metrics, calibration quantiles, and baseline comparisons.
+
+---
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

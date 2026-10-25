@@ -352,15 +352,16 @@ def show_demand_forecast():
     )
 
     st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+    st.caption("ℹ️ *Illustrative hourly demand distribution derived from the daily forecast using circadian harmonics (trough at 04:00, peak at 15:00-16:00). Prediction interval bounds calibrated independently on chronological calibration split.*")
 
     # Benchmark Comparison Section
     st.markdown("""
     <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1.25rem; margin-top: 1rem; margin-bottom: 1rem;">
         <h4 style="color: #0F172A; font-weight: 800; font-size: 1.1rem; margin-bottom: 0.25rem;">
-            🧪 Model Evaluation Benchmarks (Out-of-Sample Holdout Test Set)
+            🧪 Multi-Model Evaluation Benchmarks (Chronological Held-Out Test Split)
         </h4>
         <p style="color: #64748B; font-size: 0.85rem; margin-bottom: 0.75rem;">
-            Chronological 80/20 train-test split (292 training days, 73 holdout test days) comparing naive baselines against regularized Ridge and Random Forest models without data leakage.
+            Strict 3-way chronological split (250 training days ~70%, 53 calibration days ~15%, 55 untouched test days ~15%). Prediction intervals calibrated exclusively on the calibration set (nominal 90% bounds [-22.4, +20.1]), with observed test coverage (70.9%) honestly evaluated on the untouched winter surge test set.
         </p>
     </div>
     """, unsafe_allow_html=True)

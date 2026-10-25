@@ -49,10 +49,21 @@ ROLE_PERMISSIONS: Dict[str, Set[str]] = {
 }
 
 
-def hash_password(password: str, salt: Optional[str] = None) -> tuple[str, str]:
+import json
+import threading
+
+# Re-entrant thread lock for serialized append-only audit logging
+_AUDIT_LOG_LOCK = threading.RLock()
+
+# Modern cryptographic parameters (OWASP Password Storage Cheat Sheet recommendation for PBKDF2-HMAC-SHA256)
+DEFAULT_PBKDF2_ITERATIONS = 600000
+LEGACY_PBKDF2_ITERATIONS = 100000
+
+
+def hash_password(password: str, salt: Optional[str] = None, iterations: int = DEFAULT_PBKDF2_ITERATIONS) -> tuple[str, str]:
     """
-    Hashes password using PBKDF2-HMAC-SHA256 with 100,000 iterations and a cryptographically
-    secure 16-byte random salt.
+    Hashes password using PBKDF2-HMAC-SHA256 with 600,000 iterations (OWASP recommendation)
+    and a cryptographically secure 16-byte random salt.
     """
     if not password:
         raise ValueError("Password cannot be empty")
@@ -62,22 +73,37 @@ def hash_password(password: str, salt: Optional[str] = None) -> tuple[str, str]:
         'sha256',
         password.encode('utf-8'),
         salt.encode('utf-8'),
-        100000
+        iterations
     )
     return key.hex(), salt
 
 
 def verify_password(password: str, password_hash: str, salt: str) -> bool:
-    """Verifies a plain password against the stored hash and salt using constant-time comparison."""
+    """
+    Verifies a plain password against the stored hash and salt using constant-time comparison.
+    Backward-compatible: tests modern 600,000 iterations first, then checks legacy 100,000.
+    """
     if not password or not password_hash or not salt:
         return False
-    computed_key = hashlib.pbkdf2_hmac(
+
+    # 1. Test modern 600,000 iterations
+    key_modern = hashlib.pbkdf2_hmac(
         'sha256',
         password.encode('utf-8'),
         salt.encode('utf-8'),
-        100000
+        DEFAULT_PBKDF2_ITERATIONS
     )
-    return secrets.compare_digest(computed_key.hex(), password_hash)
+    if secrets.compare_digest(key_modern.hex(), password_hash):
+        return True
+
+    # 2. Backward-compatible fallback: test legacy 100,000 iterations
+    key_legacy = hashlib.pbkdf2_hmac(
+        'sha256',
+        password.encode('utf-8'),
+        salt.encode('utf-8'),
+        LEGACY_PBKDF2_ITERATIONS
+    )
+    return secrets.compare_digest(key_legacy.hex(), password_hash)
 
 
 def get_sqlite_conn():
@@ -161,6 +187,26 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
             details="Invalid password attempt"
         )
         return None
+
+    # Rehash-on-login migration: if user authenticated using legacy iterations, upgrade to 600,000
+    try:
+        legacy_check = hashlib.pbkdf2_hmac(
+            'sha256',
+            password.encode('utf-8'),
+            user["salt"].encode('utf-8'),
+            LEGACY_PBKDF2_ITERATIONS
+        ).hex()
+        if secrets.compare_digest(legacy_check, user["password_hash"]):
+            new_hash, new_salt = hash_password(password, iterations=DEFAULT_PBKDF2_ITERATIONS)
+            conn_rehash = get_sqlite_conn()
+            c_rehash = conn_rehash.cursor()
+            c_rehash.execute("UPDATE users SET password_hash = ?, salt = ? WHERE id = ?", (new_hash, new_salt, user["id"]))
+            conn_rehash.commit()
+            conn_rehash.close()
+            user["password_hash"] = new_hash
+            user["salt"] = new_salt
+    except Exception as e:
+        print(f"[Auth] Notice during rehash-on-login upgrade: {e}")
 
     # Update last login
     now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -303,7 +349,37 @@ def compute_audit_record_hash(
     status: str,
     details: Optional[str]
 ) -> str:
-    """Computes SHA-256 digest over the canonical representation of an audit event."""
+    """
+    Computes SHA-256 digest over unambiguous canonical JSON representation of an audit event.
+    Keys are strictly sorted with compact separators to prevent boundary blurring.
+    """
+    canonical_payload = {
+        "action": str(action),
+        "actor_role": str(actor_role),
+        "actor_username": str(actor_username),
+        "details": str(details or ""),
+        "prev_hash": str(prev_hash),
+        "status": str(status),
+        "target_id": str(target_id or ""),
+        "target_type": str(target_type or ""),
+        "timestamp": str(timestamp)
+    }
+    canonical_str = json.dumps(canonical_payload, sort_keys=True, separators=(',', ':'))
+    return hashlib.sha256(canonical_str.encode('utf-8')).hexdigest()
+
+
+def compute_legacy_audit_record_hash(
+    prev_hash: str,
+    timestamp: str,
+    actor_username: str,
+    actor_role: str,
+    action: str,
+    target_id: Optional[str],
+    target_type: Optional[str],
+    status: str,
+    details: Optional[str]
+) -> str:
+    """Legacy pipe-delimited digest for backward-compatibility with historical pre-audit records."""
     canonical_payload = (
         f"{prev_hash}|{timestamp}|{actor_username}|{actor_role}|{action}|"
         f"{target_id or ''}|{target_type or ''}|{status}|{details or ''}"
@@ -323,78 +399,86 @@ def log_audit_event(
     """
     Records an append-only, cryptographic hash-chained audit event in both PostgreSQL and SQLite.
     Each record links to the previous event's SHA-256 hash to detect unauthorized tampering.
+    Thread-safe and concurrency-locked: uses _AUDIT_LOG_LOCK and serialized DB transactions
+    to prevent competing chain entries from referencing stale prev_hash values.
     Never logs plaintext passwords, tokens, or sensitive patient identifiable keys.
     """
-    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    with _AUDIT_LOG_LOCK:
+        now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Fetch previous record hash to maintain append-only chain
-    prev_hash = "GENESIS"
-    try:
-        conn_prev = get_sqlite_conn()
-        cur_prev = conn_prev.cursor()
-        cur_prev.execute("SELECT record_hash FROM audit_logs WHERE record_hash IS NOT NULL ORDER BY id DESC LIMIT 1")
-        last_row = cur_prev.fetchone()
-        if last_row and last_row["record_hash"]:
-            prev_hash = last_row["record_hash"]
-        conn_prev.close()
-    except Exception:
+        # Local SQLite serialized append
         prev_hash = "GENESIS"
+        conn = None
+        try:
+            conn = get_sqlite_conn()
+            conn.execute("BEGIN IMMEDIATE")
+            cur = conn.cursor()
+            cur.execute("SELECT record_hash FROM audit_logs WHERE record_hash IS NOT NULL ORDER BY id DESC LIMIT 1")
+            last_row = cur.fetchone()
+            if last_row and last_row["record_hash"]:
+                prev_hash = last_row["record_hash"]
 
-    record_hash = compute_audit_record_hash(
-        prev_hash=prev_hash,
-        timestamp=now_str,
-        actor_username=actor_username,
-        actor_role=actor_role,
-        action=action,
-        target_id=target_id,
-        target_type=target_type,
-        status=status,
-        details=details
-    )
+            record_hash = compute_audit_record_hash(
+                prev_hash=prev_hash,
+                timestamp=now_str,
+                actor_username=actor_username,
+                actor_role=actor_role,
+                action=action,
+                target_id=target_id,
+                target_type=target_type,
+                status=status,
+                details=details
+            )
 
-    # 1. PostgreSQL
-    try:
-        from db.postgres import get_engine
-        from sqlalchemy import text
-        engine = get_engine()
-        if engine is not None:
-            with engine.begin() as conn:
-                conn.execute(text("""
-                    INSERT INTO audit_logs (timestamp, actor_username, actor_role, action, target_id, target_type, status, details, prev_hash, record_hash)
-                    VALUES (:ts, :act_user, :act_role, :action, :tgt_id, :tgt_type, :status, :details, :phash, :rhash);
-                """), {
-                    "ts": datetime.utcnow(),
-                    "act_user": actor_username,
-                    "act_role": actor_role,
-                    "action": action,
-                    "tgt_id": target_id,
-                    "tgt_type": target_type,
-                    "status": status,
-                    "details": details or "",
-                    "phash": prev_hash,
-                    "rhash": record_hash
-                })
-    except Exception:
-        pass
+            cur.execute("""
+                INSERT INTO audit_logs (timestamp, actor_username, actor_role, action, target_id, target_type, status, details, prev_hash, record_hash)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (now_str, actor_username, actor_role, action, target_id, target_type, status, details or "", prev_hash, record_hash))
+            conn.commit()
+            conn.close()
+            conn = None
+        except Exception as e:
+            if conn:
+                try:
+                    conn.rollback()
+                    conn.close()
+                except Exception:
+                    pass
+            print(f"[AuditLog] Fallback write error: {e}")
+            record_hash = "ERROR_HASH"
 
-    # 2. Local SQLite fallback
-    try:
-        conn = get_sqlite_conn()
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO audit_logs (timestamp, actor_username, actor_role, action, target_id, target_type, status, details, prev_hash, record_hash)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (now_str, actor_username, actor_role, action, target_id, target_type, status, details or "", prev_hash, record_hash))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"[AuditLog] Fallback write error: {e}")
+        # PostgreSQL sync if available
+        try:
+            from db.postgres import get_engine
+            from sqlalchemy import text
+            engine = get_engine()
+            if engine is not None:
+                with engine.begin() as pg_conn:
+                    pg_conn.execute(text("""
+                        INSERT INTO audit_logs (timestamp, actor_username, actor_role, action, target_id, target_type, status, details, prev_hash, record_hash)
+                        VALUES (:ts, :act_user, :act_role, :action, :tgt_id, :tgt_type, :status, :details, :phash, :rhash);
+                    """), {
+                        "ts": datetime.utcnow(),
+                        "act_user": actor_username,
+                        "act_role": actor_role,
+                        "action": action,
+                        "tgt_id": target_id,
+                        "tgt_type": target_type,
+                        "status": status,
+                        "details": details or "",
+                        "phash": prev_hash,
+                        "rhash": record_hash
+                    })
+        except Exception:
+            pass
 
 
 def verify_audit_log_chain() -> Dict[str, Any]:
     """
     Cryptographically verifies the append-only SHA-256 hash chain of the audit log.
-    Detects tampering, dropped records, or unauthorized modifications to the recorded sequence.
+    Detects tampering, modified record payloads, modified prev_hash links, dropped middle records,
+    reordered records, and sequential corruptions.
+    Supports both canonical JSON hashing and legacy format backward compatibility.
     """
     try:
         conn = get_sqlite_conn()
@@ -404,7 +488,7 @@ def verify_audit_log_chain() -> Dict[str, Any]:
         conn.close()
 
         if not rows:
-            return {"valid": True, "total_records": 0, "tampered_at_id": None, "details": "Audit log is empty."}
+            return {"valid": True, "total_records": 0, "chained_records": 0, "tampered_at_id": None, "details": "Audit log is empty."}
 
         expected_prev_hash = "GENESIS"
         chained_count = 0
@@ -420,15 +504,29 @@ def verify_audit_log_chain() -> Dict[str, Any]:
 
             chained_count += 1
 
+            # Verify chain link
             if actual_prev != expected_prev_hash and expected_prev_hash != "GENESIS":
                 return {
                     "valid": False,
                     "total_records": len(rows),
+                    "chained_records": chained_count,
                     "tampered_at_id": rec_id,
                     "details": f"Broken chain link at log ID {rec_id}: expected prev_hash '{expected_prev_hash}', got '{actual_prev}'."
                 }
 
-            expected_hash = compute_audit_record_hash(
+            # Verify payload digest: check canonical JSON first, fallback to legacy pipe
+            canonical_hash = compute_audit_record_hash(
+                prev_hash=actual_prev or "GENESIS",
+                timestamp=row["timestamp"],
+                actor_username=row["actor_username"],
+                actor_role=row["actor_role"],
+                action=row["action"],
+                target_id=row["target_id"],
+                target_type=row["target_type"],
+                status=row["status"],
+                details=row["details"]
+            )
+            legacy_hash = compute_legacy_audit_record_hash(
                 prev_hash=actual_prev or "GENESIS",
                 timestamp=row["timestamp"],
                 actor_username=row["actor_username"],
@@ -440,10 +538,11 @@ def verify_audit_log_chain() -> Dict[str, Any]:
                 details=row["details"]
             )
 
-            if actual_hash != expected_hash:
+            if actual_hash not in (canonical_hash, legacy_hash):
                 return {
                     "valid": False,
                     "total_records": len(rows),
+                    "chained_records": chained_count,
                     "tampered_at_id": rec_id,
                     "details": f"Digest mismatch at log ID {rec_id}: record payload has been altered."
                 }
@@ -458,7 +557,7 @@ def verify_audit_log_chain() -> Dict[str, Any]:
             "details": f"Cryptographic integrity verified across {chained_count} chained audit records."
         }
     except Exception as e:
-        return {"valid": False, "total_records": 0, "tampered_at_id": None, "details": f"Verification error: {str(e)}"}
+        return {"valid": False, "total_records": 0, "chained_records": 0, "tampered_at_id": None, "details": f"Verification error: {str(e)}"}
 
 
 def get_recent_audit_logs(limit: int = 50) -> List[Dict[str, Any]]:

@@ -30,6 +30,7 @@ from db.schema import (
 
 _ENGINE = None
 _SESSION_FACTORY = None
+_IS_PG_AVAILABLE = None
 
 def get_database_url():
     """Retrieve DATABASE_URL from environment or .env file."""
@@ -45,28 +46,41 @@ def get_database_url():
     return raw_url
 
 def get_engine():
-    """Get or create singleton SQLAlchemy Engine with connection pooling."""
-    global _ENGINE, _SESSION_FACTORY
+    """Get or create singleton SQLAlchemy Engine with fast connection verification."""
+    global _ENGINE, _SESSION_FACTORY, _IS_PG_AVAILABLE
+    if _IS_PG_AVAILABLE is False:
+        return None
+
     url = get_database_url()
     if not url:
+        _IS_PG_AVAILABLE = False
         return None
+
     if _ENGINE is None:
         try:
-            _ENGINE = create_engine(
+            timeout_sec = 2 if os.getenv("APP_ENV") == "testing" else 4
+            candidate_engine = create_engine(
                 url,
                 pool_pre_ping=True,
                 pool_size=5,
                 max_overflow=10,
                 pool_recycle=300,
-                connect_args={"connect_timeout": 10}
+                connect_args={"connect_timeout": timeout_sec}
             )
+            # Verify connectivity with fast ping
+            with candidate_engine.connect() as test_conn:
+                test_conn.execute(text("SELECT 1;"))
+
+            _ENGINE = candidate_engine
             _SESSION_FACTORY = sessionmaker(bind=_ENGINE)
+            _IS_PG_AVAILABLE = True
             try:
                 Base.metadata.create_all(_ENGINE)
             except Exception as e_create:
                 print(f"[PostgreSQL] Warning auto-creating tables: {e_create}")
         except Exception as e:
-            print(f"[PostgreSQL] Failed to create engine: {e}")
+            _ENGINE = None
+            _IS_PG_AVAILABLE = False
             return None
     return _ENGINE
 

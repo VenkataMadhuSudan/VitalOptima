@@ -373,6 +373,27 @@ def create_patient_admission(
                 }
             }
 
+        except sqlite3.IntegrityError as e:
+            try:
+                conn.rollback()
+                conn.close()
+            except Exception:
+                pass
+            err_msg = str(e)
+            if "idx_active_bed_occupancy" in err_msg or "UNIQUE constraint failed" in err_msg:
+                user_msg = f"Bed '{cleaned_bed}' was just claimed by a concurrent admission request. Please select another available bed."
+            else:
+                user_msg = f"Database integrity violation during admission: {err_msg}"
+            log_audit_event(
+                actor_username=actor_username,
+                actor_role=actor_role,
+                action="admissions.create",
+                target_id=cleaned_patient_id,
+                target_type="patient",
+                status="CONFLICT",
+                details=user_msg
+            )
+            raise ValueError(user_msg) from e
         except Exception as e:
             try:
                 conn.rollback()
