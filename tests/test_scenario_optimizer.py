@@ -147,6 +147,35 @@ class TestScenarioOptimizerRigor(unittest.TestCase):
         self.assertIn("Heuristic", res["solver_backend"])
         self.assertIn("first_stage_decisions", res)
 
+    def test_stochastic_sensitivity_artifact_integrity(self):
+        """Verifies multi-seed sensitivity analysis results artifact and stability bounds."""
+        import json
+        artifact = PROJECT_ROOT / "evaluation" / "stochastic_sensitivity_results.json"
+        self.assertTrue(artifact.exists(), "stochastic_sensitivity_results.json not found")
+        with open(artifact, "r") as f:
+            data = json.load(f)
+
+        summary = data["multi_seed_stability"]
+        self.assertEqual(summary["num_seeds"], 10)
+        self.assertEqual(summary["total_evaluations"], 150)
+        self.assertGreater(summary["cost_reduction_mean_pct"], 10.0)
+        self.assertGreater(summary["surge_unmet_reduction_mean_pct"], 5.0)
+
+    def test_compound_disaster_stress_scenario(self):
+        """Verifies solver handles compound disaster (+50% surge, 6 damaged ICU beds, 27% staff loss)."""
+        stressed_demands = {k: int(round(v * 1.5)) for k, v in self.base_demands.items()}
+        scenarios = ScenarioGenerator.generate_scenarios_from_forecast(stressed_demands, conformal_halfwidth=25.22)
+        res = self.optimizer.optimize_stochastic(
+            scenarios=scenarios,
+            available_capacities=self.capacities,
+            total_regular_nurses=18,
+            damaged_beds={"ICU": 6}
+        )
+        self.assertEqual(res["status"], "Optimal")
+        self.assertTrue(res.get("is_proven_optimal", False))
+        is_valid, violations = validate_stochastic_allocation(res, self.capacities, damaged_beds={"ICU": 6})
+        self.assertTrue(is_valid, f"Validation failed with: {violations}")
+
 
 if __name__ == "__main__":
     unittest.main()

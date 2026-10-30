@@ -1,0 +1,8 @@
+{
+  "checkpoint_timestamp": "2026-10-30 20:30:39 UTC",
+  "total_records": 1315,
+  "latest_record_id": 1360,
+  "latest_record_hash": "6d36c16db1ceadaf5490058414578be9996acda2d1be481630a90e576b7e29ad",
+  "latest_action": "security.anchor_test",
+  "signature_digest": "231b39f8b42b37c4867bc4d3139494357bf5a13faef9f788d850f1421ab4fb4e"
+}

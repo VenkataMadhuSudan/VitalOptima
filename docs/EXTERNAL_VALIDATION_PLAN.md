@@ -105,3 +105,4 @@ $$\text{PSI} = \sum_{k=1}^K (P_k - Q_k) \ln\left( \frac{P_k}{Q_k} \right)$$
 ## 5. Regulatory & Deployment Boundary
 
 Until credentialed multi-center clinical trials or live EHR integration pipelines are completed, VitalOptima's research outputs are officially designated as **Single-Center Retrospective Research Telemetry**. No claims of multi-center clinical clearance or FDA 510(k) exemption are made.
+

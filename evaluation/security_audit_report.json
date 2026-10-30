@@ -1,0 +1,117 @@
+{
+  "timestamp": "2026-10-30 20:30:39 UTC",
+  "password_security": {
+    "algorithm": "PBKDF2-HMAC-SHA256",
+    "iterations": 600000,
+    "hash_latency_ms": 448.38,
+    "verify_latency_ms": 435.14,
+    "hardware_evaluation": "Sub-second hash latency provides robust defense against offline GPU cracking without freezing application thread pools."
+  },
+  "rate_limiting": {
+    "attempts_tested": 6,
+    "lockout_threshold": 5,
+    "lockout_duration_minutes": 15,
+    "lockout_enforced": true,
+    "attempt_records": [
+      {
+        "attempt": 1,
+        "success": false,
+        "audit_status": "FAILED",
+        "audit_details": "Invalid password attempt (Attempt 1/5)",
+        "latency_ms": 17972.7
+      },
+      {
+        "attempt": 2,
+        "success": false,
+        "audit_status": "FAILED",
+        "audit_details": "Invalid password attempt (Attempt 2/5)",
+        "latency_ms": 1372.2
+      },
+      {
+        "attempt": 3,
+        "success": false,
+        "audit_status": "FAILED",
+        "audit_details": "Invalid password attempt (Attempt 3/5)",
+        "latency_ms": 1737.9
+      },
+      {
+        "attempt": 4,
+        "success": false,
+        "audit_status": "FAILED",
+        "audit_details": "Invalid password attempt (Attempt 4/5)",
+        "latency_ms": 1641.4
+      },
+      {
+        "attempt": 5,
+        "success": false,
+        "audit_status": "FAILED",
+        "audit_details": "Invalid password attempt (Attempt 5/5)",
+        "latency_ms": 1640.3
+      },
+      {
+        "attempt": 6,
+        "success": false,
+        "audit_status": "DENIED",
+        "audit_details": "Account temporarily locked: 5 consecutive failed attempts. 15-minute cooldown active.",
+        "latency_ms": 1229.8
+      }
+    ]
+  },
+  "rbac_authorization": {
+    "roles_evaluated": {
+      "ADMIN": {
+        "settings.view": true,
+        "users.manage": true,
+        "admissions.create": true,
+        "admissions.discharge": true,
+        "beds.view": true,
+        "audit.view": true
+      },
+      "ADMISSION_OFFICER": {
+        "settings.view": false,
+        "users.manage": false,
+        "admissions.create": true,
+        "admissions.discharge": true,
+        "beds.view": true,
+        "audit.view": false
+      },
+      "DOCTOR": {
+        "settings.view": false,
+        "users.manage": false,
+        "admissions.create": false,
+        "admissions.discharge": false,
+        "beds.view": false,
+        "audit.view": false
+      },
+      "NURSE": {
+        "settings.view": false,
+        "users.manage": false,
+        "admissions.create": false,
+        "admissions.discharge": false,
+        "beds.view": false,
+        "audit.view": false
+      },
+      "GUEST": {
+        "settings.view": false,
+        "users.manage": false,
+        "admissions.create": false,
+        "admissions.discharge": false,
+        "beds.view": false,
+        "audit.view": false
+      }
+    },
+    "privilege_escalation_prevented": true
+  },
+  "audit_chain_integrity": {
+    "chain_intact": true,
+    "total_entries": 1315,
+    "anchor_checkpoint_verified": true,
+    "tail_truncation_detected": true
+  },
+  "ai_tool_governance": {
+    "signature_filtering_active": true,
+    "unauthorized_tool_blocked": true,
+    "read_only_isolation": true,
+    "sql_injection_via_kwargs_prevented": true
+  }
+}

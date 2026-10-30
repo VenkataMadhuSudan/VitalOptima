@@ -1,0 +1,226 @@
+{
+  "multi_seed_stability": {
+    "num_seeds": 10,
+    "total_evaluations": 150,
+    "cost_reduction_mean_pct": 21.89,
+    "cost_reduction_std_pct": 4.15,
+    "cost_reduction_min_pct": 15.56,
+    "cost_reduction_max_pct": 27.78,
+    "surge_unmet_reduction_mean_pct": 14.08,
+    "surge_unmet_reduction_std_pct": 5.09,
+    "surge_unmet_reduction_min_pct": 9.06,
+    "surge_unmet_reduction_max_pct": 21.68,
+    "seed_breakdown": [
+      {
+        "seed": 42,
+        "det_mean_cost": 11064.0,
+        "stoch_mean_cost": 8866.333333333334,
+        "cost_reduction_pct": 19.86,
+        "det_surge_unmet": 84.66666666666667,
+        "stoch_surge_unmet": 77.0,
+        "surge_unmet_reduction_pct": 9.06
+      },
+      {
+        "seed": 101,
+        "det_mean_cost": 23006.0,
+        "stoch_mean_cost": 18879.666666666668,
+        "cost_reduction_pct": 17.94,
+        "det_surge_unmet": 84.66666666666667,
+        "stoch_surge_unmet": 77.0,
+        "surge_unmet_reduction_pct": 9.06
+      },
+      {
+        "seed": 202,
+        "det_mean_cost": 14088.666666666666,
+        "stoch_mean_cost": 10374.666666666666,
+        "cost_reduction_pct": 26.36,
+        "det_surge_unmet": 50.0,
+        "stoch_surge_unmet": 41.833333333333336,
+        "surge_unmet_reduction_pct": 16.33
+      },
+      {
+        "seed": 303,
+        "det_mean_cost": 11621.0,
+        "stoch_mean_cost": 8522.333333333334,
+        "cost_reduction_pct": 26.66,
+        "det_surge_unmet": 37.666666666666664,
+        "stoch_surge_unmet": 29.5,
+        "surge_unmet_reduction_pct": 21.68
+      },
+      {
+        "seed": 404,
+        "det_mean_cost": 14517.333333333334,
+        "stoch_mean_cost": 11538.0,
+        "cost_reduction_pct": 20.52,
+        "det_surge_unmet": 86.5,
+        "stoch_surge_unmet": 78.5,
+        "surge_unmet_reduction_pct": 9.25
+      },
+      {
+        "seed": 505,
+        "det_mean_cost": 18796.0,
+        "stoch_mean_cost": 13919.666666666666,
+        "cost_reduction_pct": 25.94,
+        "det_surge_unmet": 38.7,
+        "stoch_surge_unmet": 30.8,
+        "surge_unmet_reduction_pct": 20.41
+      },
+      {
+        "seed": 606,
+        "det_mean_cost": 23140.0,
+        "stoch_mean_cost": 18927.333333333332,
+        "cost_reduction_pct": 18.21,
+        "det_surge_unmet": 85.57142857142857,
+        "stoch_surge_unmet": 77.28571428571429,
+        "surge_unmet_reduction_pct": 9.68
+      },
+      {
+        "seed": 707,
+        "det_mean_cost": 20019.0,
+        "stoch_mean_cost": 15991.0,
+        "cost_reduction_pct": 20.12,
+        "det_surge_unmet": 47.888888888888886,
+        "stoch_surge_unmet": 40.333333333333336,
+        "surge_unmet_reduction_pct": 15.78
+      },
+      {
+        "seed": 808,
+        "det_mean_cost": 31488.0,
+        "stoch_mean_cost": 26588.333333333332,
+        "cost_reduction_pct": 15.56,
+        "det_surge_unmet": 89.44444444444444,
+        "stoch_surge_unmet": 81.11111111111111,
+        "surge_unmet_reduction_pct": 9.32
+      },
+      {
+        "seed": 909,
+        "det_mean_cost": 15277.333333333334,
+        "stoch_mean_cost": 11033.666666666666,
+        "cost_reduction_pct": 27.78,
+        "det_surge_unmet": 41.714285714285715,
+        "stoch_surge_unmet": 33.285714285714285,
+        "surge_unmet_reduction_pct": 20.21
+      }
+    ]
+  },
+  "conformal_halfwidth_sensitivity": [
+    {
+      "conformal_halfwidth": 10.0,
+      "expected_cost": 1345.0,
+      "expected_unmet": 0.0,
+      "base_staffing": {
+        "Internal Medicine": 6,
+        "Emergency": 6,
+        "ICU": 6,
+        "Surgery": 3,
+        "Pediatrics": 3
+      },
+      "solve_time_ms": 37.86
+    },
+    {
+      "conformal_halfwidth": 15.0,
+      "expected_cost": 1440.0,
+      "expected_unmet": 0.0,
+      "base_staffing": {
+        "Internal Medicine": 6,
+        "Emergency": 6,
+        "ICU": 6,
+        "Surgery": 3,
+        "Pediatrics": 3
+      },
+      "solve_time_ms": 72.41
+    },
+    {
+      "conformal_halfwidth": 20.0,
+      "expected_cost": 1563.0,
+      "expected_unmet": 0.0,
+      "base_staffing": {
+        "Internal Medicine": 6,
+        "Emergency": 6,
+        "ICU": 6,
+        "Surgery": 3,
+        "Pediatrics": 3
+      },
+      "solve_time_ms": 171.1
+    },
+    {
+      "conformal_halfwidth": 25.2,
+      "expected_cost": 1645.0,
+      "expected_unmet": 0.0,
+      "base_staffing": {
+        "Internal Medicine": 6,
+        "Emergency": 6,
+        "ICU": 6,
+        "Surgery": 3,
+        "Pediatrics": 3
+      },
+      "solve_time_ms": 12.52
+    },
+    {
+      "conformal_halfwidth": 30.0,
+      "expected_cost": 1733.5,
+      "expected_unmet": 0.2,
+      "base_staffing": {
+        "Internal Medicine": 6,
+        "Emergency": 6,
+        "ICU": 7,
+        "Surgery": 3,
+        "Pediatrics": 3
+      },
+      "solve_time_ms": 62.71
+    }
+  ],
+  "disaster_stress_scenarios": [
+    {
+      "scenario": "Baseline Operations",
+      "status": "Optimal",
+      "is_proven_optimal": true,
+      "expected_cost": 1645.0,
+      "expected_unmet": 0.0,
+      "is_verified": true,
+      "solve_time_ms": 15.33
+    },
+    {
+      "scenario": "Severe Emergency Surge (+50%)",
+      "status": "Optimal",
+      "is_proven_optimal": true,
+      "expected_cost": 3317.5,
+      "expected_unmet": 2.8,
+      "is_verified": true,
+      "solve_time_ms": 27.77
+    },
+    {
+      "scenario": "ICU Outage (-6 Beds Damaged)",
+      "status": "Optimal",
+      "is_proven_optimal": true,
+      "expected_cost": 1645.0,
+      "expected_unmet": 0.0,
+      "is_verified": true,
+      "solve_time_ms": 15.69
+    },
+    {
+      "scenario": "Staff Absenteeism Outbreak (-25% Nurses)",
+      "status": "Optimal",
+      "is_proven_optimal": true,
+      "expected_cost": 1941.0,
+      "expected_unmet": 0.0,
+      "is_verified": true,
+      "solve_time_ms": 16.44
+    },
+    {
+      "scenario": "Compound Catastrophic Surge & Outage",
+      "status": "Optimal",
+      "is_proven_optimal": true,
+      "expected_cost": 4401.0,
+      "expected_unmet": 3.5,
+      "is_verified": true,
+      "solve_time_ms": 18.57
+    }
+  ],
+  "experimental_fairness_guarantee": {
+    "identical_initial_capacities": true,
+    "identical_acuity_ratios": true,
+    "identical_information_at_decision_time": true,
+    "tuning_held_out_separation": "Zero evaluation outcomes used to tune scenario weights."
+  }
+}

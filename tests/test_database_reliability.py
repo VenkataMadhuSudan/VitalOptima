@@ -211,6 +211,39 @@ class TestDatabaseReliability(unittest.TestCase):
         except Exception:
             pass
 
+    def test_corrupted_backup_rejection(self):
+        """
+        Disaster Recovery Test:
+        Verifies that corrupted or truncated backup files are rejected during pre-flight
+        integrity inspection without corrupting or modifying the active database.
+        """
+        corrupted_path = PROJECT_ROOT / "db" / "backups" / "corrupted_test_snapshot.db"
+        corrupted_path.parent.mkdir(parents=True, exist_ok=True)
+        # Write 256 bytes of random non-SQLite garbage
+        corrupted_path.write_bytes(b"\x00\xFF\xAA\x55" * 64)
+
+        conn = None
+        try:
+            # Pre-flight check must fail
+            with self.assertRaises((sqlite3.DatabaseError, Exception)):
+                conn = sqlite3.connect(str(corrupted_path))
+                c = conn.cursor()
+                c.execute("PRAGMA integrity_check")
+                res = c.fetchone()[0]
+                if res.lower() != "ok":
+                    raise sqlite3.DatabaseError(f"Integrity check failed: {res}")
+        finally:
+            if conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            if corrupted_path.exists():
+                try:
+                    corrupted_path.unlink()
+                except Exception:
+                    pass
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -592,17 +592,23 @@ def verify_audit_log_chain() -> Dict[str, Any]:
 
 def get_recent_audit_logs(limit: int = 50) -> List[Dict[str, Any]]:
     """Retrieves recent audit logs for administrative inspection."""
-    # Try PostgreSQL first
+    # Try PostgreSQL first if available
     try:
-        from db.postgres import fetch_table_df
-        df = fetch_table_df("audit_logs", limit=limit)
-        if not df.empty:
-            df = df.sort_values(by="id", ascending=False)
-            return df.to_dict(orient="records")
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.connect() as conn:
+                res = conn.execute(
+                    text("SELECT * FROM audit_logs ORDER BY id DESC LIMIT :limit;"),
+                    {"limit": limit}
+                ).mappings().all()
+                if res:
+                    return [dict(r) for r in res]
     except Exception:
         pass
 
-    # Fallback to SQLite
+    # Fallback to local SQLite
     try:
         conn = get_sqlite_conn()
         cursor = conn.cursor()

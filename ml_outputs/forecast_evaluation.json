@@ -1,5 +1,5 @@
 {
-  "evaluation_timestamp": "2026-10-30 20:09:45 UTC",
+  "evaluation_timestamp": "2026-10-30 20:48:28 UTC",
   "methodology": {
     "split": "Chronological 3-way split (Train 70%, Calibration 15%, Untouched Test 15%)",
     "leakage_controls": "Lag-1/7 on shift(1), rolling statistics on shift(1), 7 warmup rows dropped",
