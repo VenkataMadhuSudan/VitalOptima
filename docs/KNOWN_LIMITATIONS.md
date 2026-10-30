@@ -41,3 +41,4 @@ VitalOptima is engineered specifically as an **administrative operations intelli
 
 - **Autoregressive Extrapolation:** Ridge regression and Random Forest forecasters excel at capturing seasonal, calendar, and autoregressive lag trends ($t-1, t-7, t-14$).
 - **Unprecedented Macro Shocks:** An ML forecaster trained on historical data cannot predict unprecedented external shocks (e.g., the emergence of a novel pandemic or catastrophic chemical spill) purely from historical lags. For these outlier events, hospital administrators must utilize the **What-If Scenario Simulator** to manually stress-test capacity.
+

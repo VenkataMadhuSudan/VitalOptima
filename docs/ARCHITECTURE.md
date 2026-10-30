@@ -96,3 +96,4 @@ flowchart TD
 | **Audit Checkpoint Truncation** | 100% detection rate | `test_cybersecurity_and_governance.py` |
 | **Test Suite Coverage** | 120+ automated test cases | `python -m unittest discover tests` (0 errors, 0 failures) |
 | **Container Memory Footprint** | $< 1.5\text{ GB}$ baseline | Multi-stage slim Docker image |
+

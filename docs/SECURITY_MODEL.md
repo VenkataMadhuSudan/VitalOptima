@@ -109,3 +109,4 @@ VitalOptima implements `export_audit_chain_checkpoint()`:
   }
   ```
 - `verify_audit_checkpoint()` compares current database row counts and latest hash against the exported anchor. If trailing records were deleted, verification fails immediately: `"Trailing truncation detected! Checkpoint expected 142 records, found 138."`
+

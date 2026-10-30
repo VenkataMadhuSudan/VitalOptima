@@ -85,3 +85,4 @@ The natural language query engine (`db/nlp_query.py`) translates user inquiries 
 VitalOptima operates with **zero cloud dependencies**:
 - If `XAI_API_KEY` is missing, invalid, or encountering network timeouts, the platform automatically activates `generate_deterministic_insights()`.
 - Produces a structured 9-field operational executive briefing computed directly from real census, department resources, and staffing rosters with **zero hallucination risk**.
+

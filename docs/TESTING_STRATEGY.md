@@ -112,3 +112,4 @@ All automated pushes and pull requests trigger the GitHub Actions workflow (`.gi
 - **Thread Sleep & Timing Windows:** Concurrent contention tests avoid flaky arbitrary `sleep()` calls. Instead, worker threads use `threading.Barrier` or synchronization primitives to release threads simultaneously at the exact nanosecond.
 - **Database Isolation:** Unit tests run either with `:memory:` SQLite connections or isolated temporary test database files (`test_concurrency.db`) that are cleaned up in `tearDown()`.
 - **Deterministic Random Seeds:** All stochastic components and backtesting evaluations utilize fixed seeds (`seed=42`) to guarantee reproducibility.
+

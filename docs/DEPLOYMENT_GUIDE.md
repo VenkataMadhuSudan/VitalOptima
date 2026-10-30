@@ -199,3 +199,4 @@ To demonstrate or operate VitalOptima during hospital administrative rounds:
     Admit a patient to a verified open bed. If two admission officers attempt to book the same bed, database-level partial unique indexing rejects the second atomically.
 11. **Sign Cryptographic Audit Checkpoint (`Security`):**
     Export the SHA-256 tamper-evident audit chain anchor to detect trailing truncation attacks.
+
