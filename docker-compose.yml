@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  vitaloptima-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vitaloptima-decision-engine
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      - APP_ENV=production
+      - SEED_DEMO_USERS=false
+      - DATABASE_URL=sqlite:////app/data/vitaloptima.db
+      - SQLITE_BUSY_TIMEOUT_MS=15000
+      - STREAMLIT_SERVER_MAX_UPLOAD_SIZE=50
+    volumes:
+      - hospital-data:/app/data
+      - hospital-backups:/app/backups
+      - ./evaluation:/app/evaluation:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 3G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+volumes:
+  hospital-data:
+    driver: local
+  hospital-backups:
+    driver: local

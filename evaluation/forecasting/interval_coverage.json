@@ -1,0 +1,16 @@
+{
+  "nominal_confidence": 0.9,
+  "empirical_quantile_method": {
+    "calibration_window_size": 53,
+    "q05": -22.38,
+    "q95": 20.14,
+    "interval_width": 42.52,
+    "test_coverage_pct": 70.9
+  },
+  "split_conformal_method": {
+    "conformal_quantile_halfwidth": 25.22,
+    "full_width": 50.44,
+    "test_coverage_pct": 78.2
+  },
+  "disclosure": "Observed test coverage reflects elevated variance during late-year unseasonal surge period."
+}

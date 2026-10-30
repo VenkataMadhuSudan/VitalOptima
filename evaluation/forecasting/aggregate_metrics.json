@@ -1,0 +1,38 @@
+{
+  "Persistence": {
+    "mae_mean": 19.48,
+    "mae_std": 4.36,
+    "rmse_mean": 22.52,
+    "rmse_std": 4.79,
+    "wape_mean": 11.46,
+    "wape_std": 2.79,
+    "bias_mean": -2.29
+  },
+  "Random_Forest": {
+    "mae_mean": 13.4,
+    "mae_std": 3.95,
+    "rmse_mean": 16.06,
+    "rmse_std": 4.81,
+    "wape_mean": 7.84,
+    "wape_std": 2.32,
+    "bias_mean": 1.78
+  },
+  "Ridge": {
+    "mae_mean": 13.35,
+    "mae_std": 3.27,
+    "rmse_mean": 15.56,
+    "rmse_std": 3.45,
+    "wape_mean": 7.84,
+    "wape_std": 1.99,
+    "bias_mean": 0.66
+  },
+  "Seasonal_Naive": {
+    "mae_mean": 17.14,
+    "mae_std": 6.37,
+    "rmse_mean": 21.5,
+    "rmse_std": 7.35,
+    "wape_mean": 9.92,
+    "wape_std": 3.25,
+    "bias_mean": -6.57
+  }
+}

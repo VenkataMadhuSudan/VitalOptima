@@ -271,3 +271,23 @@ class HospitalDataSync(Base):
         return f"<HospitalDataSync(entity='{self.entity_type}', version={self.version})>"
 
 
+
+
+class SyncOutbox(Base):
+    """Reliable outbox journal for cross-database synchronization, conflict detection, and offline replay."""
+    __tablename__ = "sync_outbox"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event_id = Column(String(50), unique=True, nullable=False, index=True)
+    entity_type = Column(String(50), nullable=False, index=True)
+    entity_id = Column(String(100), nullable=False, index=True)
+    operation = Column(String(20), nullable=False)
+    payload_json = Column(Text, nullable=False)
+    status = Column(String(20), nullable=False, default="PENDING", index=True)
+    retry_count = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    synced_at = Column(DateTime, nullable=True)
+    error_message = Column(Text, nullable=True)
+
+    def __repr__(self):
+        return f"<SyncOutbox(event_id='{self.event_id}', entity='{self.entity_type}', status='{self.status}')>"

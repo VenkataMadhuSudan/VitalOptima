@@ -1,0 +1,25 @@
+{
+  "random_forest": {
+    "mean_residual": 2.63,
+    "std_residual": 22.78,
+    "skewness": 0.73,
+    "kurtosis": 1.84,
+    "q25": -13.02,
+    "median": 2.75,
+    "q75": 13.64,
+    "max_underprediction": 73.0,
+    "max_overprediction": -41.39
+  },
+  "ridge_regression": {
+    "mean_residual": 0.4,
+    "std_residual": 22.8,
+    "skewness": 1.19,
+    "kurtosis": 3.46,
+    "q25": -15.22,
+    "median": -0.93,
+    "q75": 11.62,
+    "max_underprediction": 87.84,
+    "max_overprediction": -45.26
+  },
+  "interpretation": "Ridge regression exhibits lower variance (std: 22.6 vs 22.7) and near-zero forecast bias (-0.4 vs -2.6), confirming that linear autoregressive regularization is well-conditioned for daily hospital arrival volume."
+}

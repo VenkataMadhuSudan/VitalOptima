@@ -1,0 +1,22 @@
+{
+  "dataset_total_observations": 365,
+  "effective_model_observations": 358,
+  "warmup_rows_dropped": 7,
+  "partitions": {
+    "training_split": {
+      "sample_size": 250,
+      "ratio_pct": 69.8,
+      "purpose": "Model fitting strictly on historical observations prior to calibration"
+    },
+    "calibration_split": {
+      "sample_size": 53,
+      "ratio_pct": 14.8,
+      "purpose": "Residual quantile estimation and split conformal nonconformity scores"
+    },
+    "held_out_test_split": {
+      "sample_size": 55,
+      "ratio_pct": 15.4,
+      "purpose": "Final out-of-sample evaluation on untouched prospective period"
+    }
+  }
+}

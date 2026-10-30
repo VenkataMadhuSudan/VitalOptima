@@ -126,6 +126,55 @@ class TestForecastIntegrity(unittest.TestCase):
         self.assertIn("diurnal", m_24["forecast_nature"].lower())
         self.assertIn("circadian", m_24["forecast_nature"].lower())
 
+    def test_target_taxonomy_integrity(self):
+        """Verifies that all 5 clinical forecasting targets have documented metadata."""
+        taxonomy = self.forecaster.get_target_taxonomy()
+        required_targets = [
+            "emergency_arrivals", "admissions", "icu_admissions", "bed_occupancy", "supply_consumption"
+        ]
+        for t in required_targets:
+            self.assertIn(t, taxonomy)
+            meta = taxonomy[t]
+            self.assertIn("display_name", meta)
+            self.assertIn("frequency", meta)
+            self.assertIn("unit", meta)
+            self.assertIn("prediction_horizon", meta)
+            self.assertIn("missing_data_handling", meta)
+
+    def test_rolling_origin_backtest(self):
+        """Verifies 5-fold expanding window cross-validation and metric records."""
+        bt = self.forecaster.backtest_results
+        self.assertIn("folds", bt)
+        self.assertIn("aggregate", bt)
+        self.assertGreaterEqual(len(bt["folds"]), 20)  # 5 folds * 4 models = 20 records
+        models_in_agg = list(bt["aggregate"].keys())
+        self.assertIn("Ridge", models_in_agg)
+        self.assertIn("Random_Forest", models_in_agg)
+        self.assertIn("Persistence", models_in_agg)
+
+        # Confirm Ridge and RF achieve lower mean MAE than Naive Persistence
+        ridge_mae = bt["aggregate"]["Ridge"]["mae_mean"]
+        pers_mae = bt["aggregate"]["Persistence"]["mae_mean"]
+        self.assertLess(ridge_mae, pers_mae)
+
+    def test_split_conformal_prediction_intervals(self):
+        """Verifies split conformal intervals with finite-sample correction."""
+        metrics = self.forecaster.metrics
+        self.assertIn("conformal_test_coverage_pct", metrics)
+        self.assertIn("conformal_interval_halfwidth", metrics)
+        self.assertGreater(metrics["conformal_interval_halfwidth"], 0)
+        self.assertGreaterEqual(metrics["conformal_test_coverage_pct"], 50.0)
+
+    def test_reproducible_evaluation_artifacts_exist(self):
+        """Verifies that machine-readable reproducibility artifacts are created."""
+        eval_dir = PROJECT_ROOT / "evaluation" / "forecasting"
+        self.assertTrue((eval_dir / "dataset_manifest.json").exists())
+        self.assertTrue((eval_dir / "run_config.json").exists())
+        self.assertTrue((eval_dir / "predictions.csv").exists())
+        self.assertTrue((eval_dir / "fold_metrics.csv").exists())
+        self.assertTrue((eval_dir / "aggregate_metrics.json").exists())
+        self.assertTrue((eval_dir / "interval_coverage.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

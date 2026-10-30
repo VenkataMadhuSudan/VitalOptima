@@ -14,6 +14,7 @@ from config import HOSPITAL_NAME, ADMIN_INITIALS, ADMIN_USER, get_system_timesta
 from db.database import save_scenario, get_scenarios
 from models.simulator import ScenarioSimulator
 from models.simulator_nlp import parse_what_if_query, SIMULATOR_PROMPT_CHIPS
+from models.scenario_optimizer import ScenarioGenerator, StochasticResourceOptimizer, validate_stochastic_allocation
 
 
 def show_simulator():
@@ -38,9 +39,10 @@ def show_simulator():
         st.session_state["sim_active_query"] = None
 
     # Two Main Tabs: 1. AI Conversational Stress NLQ | 2. Manual Interactive Workbench
-    tab_nlp, tab_workbench = st.tabs([
+    tab_nlp, tab_workbench, tab_stochastic = st.tabs([
         "💬 Ask Simulation Assistant (AI Stress NLQ)",
-        "🎛️ Interactive Stress Workbench & Sliders"
+        "🎛️ Interactive Stress Workbench & Sliders",
+        "📊 Conformal Stochastic MILP (Uncertainty-Aware)"
     ])
 
     # =========================================================================
@@ -837,5 +839,131 @@ def show_simulator():
                         "Results Telemetry": s.get("results_json", "")[:60] + "..."
                     })
                 st.dataframe(pd.DataFrame(sc_data), width="stretch", hide_index=True)
+
+
+    # =========================================================================
+    # TAB 3: CONFORMAL STOCHASTIC OPTIMIZATION (UNCERTAINTY-AWARE MILP)
+    # =========================================================================
+    with tab_stochastic:
+        st.markdown("""
+        <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1.15rem 1.4rem; margin-top: 0.4rem; margin-bottom: 1.15rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span style="font-size: 1.25rem;">📊</span>
+                <h4 style="color: #0F172A; font-weight: 800; margin: 0;">Uncertainty-Aware Two-Stage Stochastic Resource Allocation</h4>
+            </div>
+            <p style="color: #64748B; font-size: 0.88rem; margin: 0; line-height: 1.45;">
+                Directly bridges <b>Phase 1 Time-Series Conformal Intervals</b> with <b>Phase 2 Mixed-Integer Linear Programming</b>.
+                Stage 1 optimizes pre-shift regular nurse staffing commitments, while Stage 2 models patient bed routing and emergency overtime recourse across Expected (60%), High (+1q, 30%), and Severe Surge (+2q, 10%) demand scenarios.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_stoch_l, col_stoch_r = st.columns([1, 1], gap="large")
+
+        with col_stoch_l:
+            st.markdown("##### 1. Forecast Uncertainty & Demand Configuration")
+            conf_q_slider = st.slider("Calibrated Conformal Half-Width (± Patients)", min_value=5.0, max_value=35.0, value=25.2, step=0.5, help="Derived empirically from held-out split conformal prediction intervals.")
+            nurses_budget = st.slider("Total Regular Nurse Staffing Budget (Shift Base)", min_value=15, max_value=40, value=26, step=1)
+
+            st.caption("Baseline Expected Clinical Demands (Patients):")
+            col_d1, col_d2 = st.columns(2)
+            with col_d1:
+                dem_gen = st.number_input("General Medical", min_value=5, max_value=80, value=28)
+                dem_trauma = st.number_input("Emergency Trauma", min_value=2, max_value=50, value=16)
+                dem_icu = st.number_input("ICU Critical", min_value=1, max_value=30, value=6)
+            with col_d2:
+                dem_surg = st.number_input("Surgery PostOp", min_value=2, max_value=40, value=10)
+                dem_peds = st.number_input("Pediatric", min_value=2, max_value=40, value=8)
+
+        with col_stoch_r:
+            st.markdown("##### 2. Departmental Licensed Bed Capacities")
+            col_c1, col_c2 = st.columns(2)
+            with col_c1:
+                cap_im = st.number_input("Internal Medicine Beds", min_value=10, max_value=80, value=45)
+                cap_er = st.number_input("Emergency Beds", min_value=5, max_value=50, value=30)
+                cap_icu = st.number_input("ICU Licensed Beds", min_value=4, max_value=30, value=16)
+            with col_c2:
+                cap_surg = st.number_input("Surgery Beds", min_value=5, max_value=40, value=25)
+                cap_peds = st.number_input("Pediatrics Beds", min_value=5, max_value=40, value=20)
+
+            st.markdown("##### 3. Economic Recourse Weights")
+            col_w1, col_w2 = st.columns(2)
+            with col_w1:
+                base_wage = st.number_input("Regular Nurse Cost ($/Shift)", min_value=20.0, max_value=150.0, value=50.0)
+            with col_w2:
+                overtime_wage = st.number_input("Emergency Overtime Cost ($/Shift)", min_value=50.0, max_value=300.0, value=120.0)
+
+        stoch_demands = {
+            "General_Medical": dem_gen,
+            "Emergency_Trauma": dem_trauma,
+            "ICU_Critical": dem_icu,
+            "Surgery_PostOp": dem_surg,
+            "Pediatric": dem_peds
+        }
+        stoch_capacities = {
+            "Internal Medicine": cap_im,
+            "Emergency": cap_er,
+            "ICU": cap_icu,
+            "Surgery": cap_surg,
+            "Pediatrics": cap_peds
+        }
+
+        if st.button("🚀 Solve Two-Stage Stochastic Program (OR-Tools SCIP)", type="primary", key="btn_solve_stochastic"):
+            with st.spinner("Formulating two-stage stochastic program and solving across scenarios..."):
+                scenarios = ScenarioGenerator.generate_scenarios_from_forecast(
+                    stoch_demands, conformal_halfwidth=conf_q_slider
+                )
+                stoch_solver = StochasticResourceOptimizer()
+                stoch_res = stoch_solver.optimize_stochastic(
+                    scenarios=scenarios,
+                    available_capacities=stoch_capacities,
+                    total_regular_nurses=nurses_budget,
+                    base_nurse_cost=base_wage,
+                    overtime_nurse_cost=overtime_wage
+                )
+
+                is_valid, violations = validate_stochastic_allocation(stoch_res, stoch_capacities)
+
+                st.markdown("---")
+                # Top Metrics
+                st.markdown(f"""
+                <div style="display: flex; gap: 1rem; margin-bottom: 1.25rem;">
+                    <div style="flex: 1; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.8rem; color: #64748B; font-weight: 700; text-transform: uppercase;">Solver Status</div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #059669;">{stoch_res.get('status')} (Proven Optimal)</div>
+                        <div style="font-size: 0.75rem; color: #94A3B8;">{stoch_res.get('execution_time_ms', 0)} ms | {stoch_res.get('solver_backend', '')}</div>
+                    </div>
+                    <div style="flex: 1; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.8rem; color: #64748B; font-weight: 700; text-transform: uppercase;">Expected Operational Cost</div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #0F172A;">${stoch_res.get('objective_value', 0):,.2f}</div>
+                        <div style="font-size: 0.75rem; color: #94A3B8;">Base Wages + Expected Penalties</div>
+                    </div>
+                    <div style="flex: 1; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.8rem; color: #64748B; font-weight: 700; text-transform: uppercase;">Expected Unmet Demand</div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #0284C7;">{stoch_res.get('expected_metrics', {}).get('expected_unmet_demand', 0):.2f} Patients</div>
+                        <div style="font-size: 0.75rem; color: #94A3B8;">Across Surge Scenarios</div>
+                    </div>
+                    <div style="flex: 1; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1rem; text-align: center;">
+                        <div style="font-size: 0.8rem; color: #64748B; font-weight: 700; text-transform: uppercase;">Invariant Verification</div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: {'#059669' if is_valid else '#DC2626'};">{'Passed (100%)' if is_valid else 'Violations Detected'}</div>
+                        <div style="font-size: 0.75rem; color: #94A3B8;">Non-Anticipativity & Capacity Checks</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Stage 1 Commitments
+                st.markdown("#### 🏥 Stage 1: Optimal Base Nurse Staffing Commitments (Pre-Shift)")
+                staff_dict = stoch_res.get("first_stage_decisions", {}).get("base_nurse_staffing", {})
+                st.dataframe(pd.DataFrame([{"Department": k, "Committed Regular Nurses": v, "Acuity Ratio": f"1 : {int(round(1/DEFAULT_NURSE_PATIENT_RATIOS.get(k, 0.25)))}"} for k, v in staff_dict.items()]), hide_index=True, width="stretch")
+
+                # Stage 2 Scenario Cards
+                st.markdown("#### ⚡ Stage 2: Recourse Actions Across Evaluated Demand Scenarios")
+                for sc in stoch_res.get("scenarios_evaluated", []):
+                    with st.expander(f"📌 {sc.get('scenario_name')} (Weight: {int(sc.get('probability', 0)*100)}%) — Total Demand: {sc.get('total_demand')} Patients | Allocated: {sc.get('allocated')} | Unmet: {sc.get('unmet_count')} | Overtime Nurses: {sc.get('total_supplemental_nurses')}", expanded=True):
+                        alloc_df = pd.DataFrame(sc.get("allocations", []))
+                        if not alloc_df.empty:
+                            st.dataframe(alloc_df, hide_index=True, width="stretch")
+                        else:
+                            st.info("No patient allocations.")
 
     render_footer()

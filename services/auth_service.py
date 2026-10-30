@@ -55,6 +55,12 @@ import threading
 # Re-entrant thread lock for serialized append-only audit logging
 _AUDIT_LOG_LOCK = threading.RLock()
 
+# Login attempt throttling tracker: {username: [timestamp1, timestamp2, ...]}
+_FAILED_LOGINS = {}
+_FAILED_LOGIN_LOCK = threading.Lock()
+MAX_FAILED_ATTEMPTS = 5
+LOCKOUT_WINDOW_SECONDS = 900  # 15 minutes
+
 # Modern cryptographic parameters (OWASP Password Storage Cheat Sheet recommendation for PBKDF2-HMAC-SHA256)
 DEFAULT_PBKDF2_ITERATIONS = 600000
 LEGACY_PBKDF2_ITERATIONS = 100000
@@ -178,15 +184,38 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
         )
         return None
 
+    # Rate limiting & brute-force throttling check
+    import time
+    u_key = username.strip().lower()
+    now_epoch = time.time()
+    with _FAILED_LOGIN_LOCK:
+        recent_fails = [ts for ts in _FAILED_LOGINS.get(u_key, []) if now_epoch - ts < LOCKOUT_WINDOW_SECONDS]
+        _FAILED_LOGINS[u_key] = recent_fails
+        if len(recent_fails) >= MAX_FAILED_ATTEMPTS:
+            log_audit_event(
+                actor_username=user["username"],
+                actor_role=user["role"],
+                action="auth.login",
+                status="DENIED",
+                details=f"Account temporarily locked: {len(recent_fails)} consecutive failed attempts. 15-minute cooldown active."
+            )
+            return None
+
     if not verify_password(password, user["password_hash"], user["salt"]):
+        with _FAILED_LOGIN_LOCK:
+            _FAILED_LOGINS.setdefault(u_key, []).append(now_epoch)
         log_audit_event(
             actor_username=user["username"],
             actor_role=user["role"],
             action="auth.login",
             status="FAILED",
-            details="Invalid password attempt"
+            details=f"Invalid password attempt (Attempt {len(_FAILED_LOGINS.get(u_key, []))}/{MAX_FAILED_ATTEMPTS})"
         )
         return None
+
+    # Clear failed attempts upon successful authentication
+    with _FAILED_LOGIN_LOCK:
+        _FAILED_LOGINS.pop(u_key, None)
 
     # Rehash-on-login migration: if user authenticated using legacy iterations, upgrade to 600,000
     try:
@@ -235,7 +264,8 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
         "role": user["role"],
         "full_name": user["full_name"],
         "department": user.get("department", "Hospital"),
-        "last_login": now_str
+        "last_login": now_str,
+        "login_timestamp": time.time()
     }
     return safe_user
 
@@ -1003,3 +1033,102 @@ def update_user_profile(
 
     return dict(updated_row) if updated_row else {"username": clean_target}
 
+
+
+
+def is_session_valid(user: Optional[Dict[str, Any]], max_age_seconds: int = 28800) -> bool:
+    """
+    Verifies that a user session has not expired and that the user account
+    remains active in the database.
+    """
+    if not user or not isinstance(user, dict):
+        return False
+    # Check database if user was disabled since session creation
+    db_user = get_user_by_username(user.get("username", ""))
+    if not db_user or not db_user.get("is_active"):
+        return False
+    # Check session age if login_timestamp provided
+    login_ts = user.get("login_timestamp")
+    if login_ts:
+        try:
+            import time
+            age = time.time() - float(login_ts)
+            if age > max_age_seconds:
+                return False
+        except Exception:
+            pass
+    return True
+
+
+def export_audit_chain_checkpoint(target_file: Optional[Path] = None) -> Path:
+    """
+    Exports a signed cryptographic checkpoint of the current audit chain head.
+    Enables detection of trailing record deletion (threat model limitation mitigation).
+    """
+    from config import DB_DIR
+    checkpoint_path = target_file or (DB_DIR / "audit_checkpoint_latest.json")
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, timestamp, action, prev_hash, record_hash FROM audit_logs ORDER BY id DESC LIMIT 1")
+    latest = cursor.fetchone()
+    cursor.execute("SELECT COUNT(*) FROM audit_logs")
+    total_count = cursor.fetchone()[0]
+    conn.close()
+
+    curr_hash = latest["record_hash"] if latest else "GENESIS"
+    checkpoint_data = {
+        "checkpoint_timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "total_records": total_count,
+        "latest_record_id": latest["id"] if latest else 0,
+        "latest_record_hash": curr_hash,
+        "latest_action": latest["action"] if latest else "NONE",
+        "signature_digest": hashlib.sha256(f"{total_count}|{curr_hash}".encode("utf-8")).hexdigest()
+    }
+
+    with open(checkpoint_path, "w", encoding="utf-8") as f:
+        json.dump(checkpoint_data, f, indent=2)
+
+    return checkpoint_path
+
+
+def verify_audit_checkpoint(checkpoint_file: Path) -> Dict[str, Any]:
+    """
+    Verifies the current audit log table against an exported chain checkpoint.
+    Detects trailing truncation where records were silently deleted from the tail.
+    """
+    p = Path(checkpoint_file)
+    if not p.exists():
+        return {"valid": False, "error": f"Checkpoint file not found: {checkpoint_file}"}
+
+    with open(p, "r", encoding="utf-8") as f:
+        cp = json.load(f)
+
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM audit_logs")
+    curr_count = cursor.fetchone()[0]
+    cursor.execute("SELECT id, record_hash FROM audit_logs ORDER BY id DESC LIMIT 1")
+    latest = cursor.fetchone()
+    conn.close()
+
+    if curr_count < cp["total_records"]:
+        return {
+            "valid": False,
+            "error": f"Trailing truncation detected! Checkpoint expected {cp['total_records']} records, but table only contains {curr_count}."
+        }
+
+    curr_hash = latest["record_hash"] if latest else "GENESIS"
+    if cp["latest_record_id"] == (latest["id"] if latest else 0) and curr_hash != cp["latest_record_hash"]:
+        return {
+            "valid": False,
+            "error": f"Chain head mismatch! Expected hash {cp['latest_record_hash']}, found {curr_hash}."
+        }
+
+    return {
+        "valid": True,
+        "checkpoint_records": cp["total_records"],
+        "current_records": curr_count,
+        "details": "Audit chain matches or extends exported cryptographic checkpoint."
+    }

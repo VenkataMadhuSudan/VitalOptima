@@ -1,0 +1,21 @@
+{
+  "random_seed": 42,
+  "split_ratio": {
+    "train": 0.7,
+    "calibration": 0.15,
+    "test": 0.15
+  },
+  "models": {
+    "random_forest": {
+      "n_estimators": 100,
+      "max_depth": 6,
+      "min_samples_split": 4
+    },
+    "ridge": {
+      "alpha": 1.0
+    }
+  },
+  "conformal_alpha": 0.1,
+  "backtest_folds": 5,
+  "backtest_horizon": 7
+}

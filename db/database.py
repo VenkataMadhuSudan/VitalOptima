@@ -218,20 +218,24 @@ def init_db():
     )
     """)
 
-    # Ensure default users exist in SQLite
-    for uname, pw, role, fname, dept in [
-        ("admin", "Admin@Vital2026!", "ADMIN", "Dr. Rajesh Sharma (Medical Director)", "Hospital Administration"),
-        ("admit_officer", "Admit@Vital2026!", "ADMISSION_OFFICER", "Priya Nair (Lead Admission Officer)", "Central Admissions & Triage")
-    ]:
-        cursor.execute("SELECT id FROM users WHERE LOWER(username) = ?", (uname.lower(),))
-        if not cursor.fetchone():
-            from services.auth_service import hash_password
-            h, s = hash_password(pw)
-            now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-            cursor.execute("""
-                INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-            """, (uname, h, s, role, fname, dept, now_ts))
+    # Ensure default users exist in SQLite (restricted in production)
+    import os
+    app_env = os.getenv("APP_ENV", "development").lower()
+    seed_demo = os.getenv("SEED_DEMO_USERS", "true" if app_env != "production" else "false").lower() == "true"
+    if seed_demo:
+        for uname, pw, role, fname, dept in [
+            ("admin", "Admin@Vital2026!", "ADMIN", "Dr. Rajesh Sharma (Medical Director)", "Hospital Administration"),
+            ("admit_officer", "Admit@Vital2026!", "ADMISSION_OFFICER", "Priya Nair (Lead Admission Officer)", "Central Admissions & Triage")
+        ]:
+            cursor.execute("SELECT id FROM users WHERE LOWER(username) = ?", (uname.lower(),))
+            if not cursor.fetchone():
+                from services.auth_service import hash_password
+                h, s = hash_password(pw)
+                now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                cursor.execute("""
+                    INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+                """, (uname, h, s, role, fname, dept, now_ts))
 
     # Sync default admin users to Postgres if available
     try:
@@ -359,6 +363,24 @@ def init_db():
                        ("resources", 1, now_ts, "system"))
         cursor.execute("INSERT INTO hospital_data_sync (entity_type, version, last_updated_at, updated_by) VALUES (?, ?, ?, ?)",
                        ("global", 1, now_ts, "system"))
+
+    # --- 4b. Reliable Sync Outbox Journal Table ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS sync_outbox (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id TEXT UNIQUE NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        operation TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'PENDING',
+        retry_count INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        synced_at TEXT,
+        error_message TEXT
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_sync_outbox_status ON sync_outbox (status);")
 
     # --- 5. Department Resources Table (authoritative capacity baseline) ---
     cursor.execute("""
@@ -538,3 +560,149 @@ def get_scenarios(limit=50):
 
 # Initialize fallback database on module load
 init_db()
+
+
+def record_sync_outbox(
+    entity_type: str,
+    entity_id: str,
+    operation: str,
+    payload: dict,
+    status: str = "PENDING",
+    error_msg: str = None
+) -> str:
+    """Records an operational event in the sync outbox journal."""
+    import uuid
+    event_id = f"EVT-{uuid.uuid4().hex[:12].upper()}"
+    now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    payload_str = json.dumps(payload, default=str)
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO sync_outbox (event_id, entity_type, entity_id, operation, payload_json, status, created_at, error_message)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (event_id, entity_type, entity_id, operation, payload_str, status, now_ts, error_msg))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[Outbox] Error logging outbox event: {e}")
+    return event_id
+
+
+def get_pending_outbox_events(limit: int = 50):
+    """Retrieves pending outbox events awaiting synchronization."""
+    try:
+        conn = get_sqlite_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM sync_outbox WHERE status = 'PENDING' ORDER BY id ASC LIMIT ?", (limit,))
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return rows
+    except Exception:
+        return []
+
+
+def sync_pending_outbox():
+    """
+    Replays pending outbox events to PostgreSQL cloud engine when connection is restored.
+    Idempotent and resilient to duplicate calls.
+    """
+    events = get_pending_outbox_events()
+    if not events:
+        return {"status": "Clean", "synced_count": 0, "failed_count": 0}
+
+    from db.postgres import get_engine
+    engine = get_engine()
+    if engine is None:
+        return {"status": "Degraded", "error": "PostgreSQL unavailable", "synced_count": 0, "failed_count": len(events)}
+
+    from sqlalchemy import text
+    synced = 0
+    failed = 0
+    now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+    conn_sqlite = get_sqlite_connection()
+    c_sql = conn_sqlite.cursor()
+
+    for evt in events:
+        try:
+            payload = json.loads(evt["payload_json"])
+            ent_type = evt["entity_type"]
+            op = evt["operation"]
+
+            with engine.begin() as pg_conn:
+                if ent_type == "admissions" and op == "INSERT":
+                    pg_conn.execute(text("""
+                        INSERT INTO patient_admissions (
+                            admission_id, patient_id, patient_name, age, gender, department,
+                            admission_type, status, bed_number, admitted_at, admitted_by, clinical_notes, updated_at
+                        ) VALUES (
+                            :adm_id, :pat_id, :name, :age, :gender, :dept, :adm_type, :status, :bed, :admitted_at, :admitted_by, :notes, :updated_at
+                        ) ON CONFLICT (admission_id) DO NOTHING;
+                    """), {
+                        "adm_id": payload.get("admission_id"),
+                        "pat_id": payload.get("patient_id"),
+                        "name": payload.get("patient_name"),
+                        "age": payload.get("age"),
+                        "gender": payload.get("gender"),
+                        "dept": payload.get("department"),
+                        "adm_type": payload.get("admission_type"),
+                        "status": payload.get("status", "Admitted"),
+                        "bed": payload.get("bed_number"),
+                        "admitted_at": payload.get("admitted_at") or now_ts,
+                        "admitted_by": payload.get("admitted_by", "system"),
+                        "notes": payload.get("clinical_notes", ""),
+                        "updated_at": now_ts
+                    })
+                elif ent_type == "admissions" and op == "UPDATE":
+                    pg_conn.execute(text("""
+                        UPDATE patient_admissions
+                        SET status = :status, discharged_at = :discharged_at, discharged_by = :discharged_by, updated_at = :now_ts
+                        WHERE admission_id = :adm_id;
+                    """), {
+                        "status": payload.get("status", "Discharged"),
+                        "discharged_at": payload.get("discharged_at") or now_ts,
+                        "discharged_by": payload.get("discharged_by", "system"),
+                        "now_ts": now_ts,
+                        "adm_id": payload.get("admission_id")
+                    })
+
+            c_sql.execute("UPDATE sync_outbox SET status = 'SYNCED', synced_at = ? WHERE id = ?", (now_ts, evt["id"]))
+            conn_sqlite.commit()
+            synced += 1
+        except Exception as e:
+            c_sql.execute("UPDATE sync_outbox SET retry_count = retry_count + 1, error_message = ? WHERE id = ?", (str(e), evt["id"]))
+            conn_sqlite.commit()
+            failed += 1
+
+    conn_sqlite.close()
+    return {"status": "Success" if failed == 0 else "Partial", "synced_count": synced, "failed_count": failed}
+
+
+def backup_database(backup_path=None):
+    """Performs an atomic zero-downtime backup of the SQLite database using SQLite Online Backup API."""
+    from config import DB_DIR
+    target = backup_path or (DB_DIR / f"vitaloptima_backup_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.db")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    src_conn = get_sqlite_connection()
+    dst_conn = sqlite3.connect(str(target))
+    with dst_conn:
+        src_conn.backup(dst_conn)
+    dst_conn.close()
+    src_conn.close()
+    return target
+
+
+def restore_database(backup_path):
+    """Restores SQLite database from a backup file."""
+    p = Path(backup_path)
+    if not p.exists():
+        raise FileNotFoundError(f"Backup file not found at {backup_path}")
+    from config import DB_PATH
+    src_conn = sqlite3.connect(str(p))
+    dst_conn = sqlite3.connect(str(DB_PATH))
+    with dst_conn:
+        src_conn.backup(dst_conn)
+    dst_conn.close()
+    src_conn.close()
+    return True

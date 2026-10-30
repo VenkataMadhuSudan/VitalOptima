@@ -353,9 +353,33 @@ def create_patient_admission(
                 details=f"Admitted patient {cleaned_name} ({cleaned_patient_id}) to {cleaned_dept}, Bed: {cleaned_bed or 'Unassigned'}"
             )
 
-            # 9. Trigger Cross-User Data Sync
+            # 9. Trigger Cross-User Data Sync & Outbox Journaling
             bump_sync_version("admissions", actor=actor_username)
             bump_sync_version("resources", actor=actor_username)
+            try:
+                from db.database import record_sync_outbox, sync_pending_outbox
+                record_sync_outbox(
+                    entity_type="admissions",
+                    entity_id=admission_id,
+                    operation="INSERT",
+                    payload={
+                        "admission_id": admission_id,
+                        "patient_id": cleaned_patient_id,
+                        "patient_name": cleaned_name,
+                        "age": age,
+                        "gender": gender,
+                        "department": cleaned_dept,
+                        "admission_type": admission_type,
+                        "status": "Admitted",
+                        "bed_number": cleaned_bed,
+                        "admitted_at": now_ts,
+                        "admitted_by": actor_username,
+                        "clinical_notes": clinical_notes or ""
+                    }
+                )
+                sync_pending_outbox()
+            except Exception as e_outbox:
+                print(f"[AdmissionService] Outbox sync notice: {e_outbox}")
 
             return {
                 "success": True,
@@ -496,9 +520,26 @@ def discharge_patient(
                 details=f"Discharged patient {admission['patient_name']} from {dept_name}. Bed {bed_num} released."
             )
 
-            # Trigger Data Sync
+            # Trigger Data Sync & Outbox Journaling
             bump_sync_version("admissions", actor=actor_username)
             bump_sync_version("resources", actor=actor_username)
+            try:
+                from db.database import record_sync_outbox, sync_pending_outbox
+                record_sync_outbox(
+                    entity_type="admissions",
+                    entity_id=admission_id,
+                    operation="UPDATE",
+                    payload={
+                        "admission_id": admission_id,
+                        "status": "Discharged",
+                        "discharged_at": now_ts,
+                        "discharged_by": actor_username,
+                        "discharge_notes": discharge_notes or ""
+                    }
+                )
+                sync_pending_outbox()
+            except Exception as e_outbox:
+                print(f"[AdmissionService] Outbox sync notice: {e_outbox}")
 
             return {
                 "success": True,

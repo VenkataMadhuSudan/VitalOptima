@@ -243,13 +243,20 @@ TOOL_DEFINITIONS = [
 ]
 
 
-def execute_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-    """Safely executes an allowlisted read-only tool with bounded output."""
+def execute_tool(name: str, arguments: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Safely executes an allowlisted read-only tool with argument validation and bounded output."""
     if name not in TOOL_REGISTRY:
         return {"error": f"Tool '{name}' is not in the allowlist of safe analytical tools."}
 
+    if arguments is None or not isinstance(arguments, dict):
+        arguments = {}
+
     try:
+        import inspect
         fn = TOOL_REGISTRY[name]
-        return fn(**arguments)
+        sig = inspect.signature(fn)
+        # Filter arguments to strictly allowed parameters to prevent unexpected keyword errors
+        valid_args = {k: v for k, v in arguments.items() if k in sig.parameters}
+        return fn(**valid_args)
     except Exception as exc:
         return {"error": f"Tool execution failed for '{name}': {str(exc)}"}

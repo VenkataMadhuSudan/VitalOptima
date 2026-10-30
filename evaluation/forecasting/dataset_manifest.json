@@ -1,0 +1,80 @@
+{
+  "dataset_file": "hospital_census_daily.csv",
+  "sha256": "987b055c0db6ed60d07634c96388a5bd42c559b560daf2fc200b6b6a23f7e0b2",
+  "rows_raw": 365,
+  "rows_prepared": 358,
+  "warmup_rows_dropped": 7,
+  "date_min": "2025-01-08",
+  "date_max": "2025-12-31",
+  "features": [
+    "dow_sin",
+    "dow_cos",
+    "doy_sin",
+    "doy_cos",
+    "lag_1_arrivals",
+    "lag_7_arrivals",
+    "lag_1_admissions",
+    "lag_1_discharges",
+    "rolling_3_arrivals",
+    "rolling_7_arrivals",
+    "staff_ratio",
+    "surgeries_lag1"
+  ],
+  "target_taxonomy": {
+    "emergency_arrivals": {
+      "display_name": "Emergency Department Arrivals",
+      "description": "Daily count of ambulatory and ambulance patient arrivals at emergency triage.",
+      "source_dataset": "data/hospital_census_daily.csv",
+      "frequency": "Daily (Aggregated 24h count)",
+      "unit": "patients/day",
+      "timestamp_convention": "Calendar Date (UTC / IST local midnight-to-midnight)",
+      "prediction_horizon": "1 to 7 days forward",
+      "missing_data_handling": "Forward fill strictly prior to t; warmup window dropped",
+      "primary_operational_use": "Triage staffing, surge beds, ED boarder mitigation"
+    },
+    "admissions": {
+      "display_name": "Hospital Inpatient Admissions",
+      "description": "Daily count of patients admitted from ED and elective blocks to acute inpatient beds.",
+      "source_dataset": "data/hospital_census_daily.csv",
+      "frequency": "Daily",
+      "unit": "patients/day",
+      "timestamp_convention": "Calendar Date",
+      "prediction_horizon": "1 to 7 days forward",
+      "missing_data_handling": "Zero lookahead; drop warmup window",
+      "primary_operational_use": "General ward bed turnover, discharge planning"
+    },
+    "icu_admissions": {
+      "display_name": "ICU Critical Care Admissions",
+      "description": "Daily count of high-acuity admissions requiring mechanical ventilation or intensive monitoring.",
+      "source_dataset": "data/hospital_census_daily.csv",
+      "frequency": "Daily",
+      "unit": "patients/day",
+      "timestamp_convention": "Calendar Date",
+      "prediction_horizon": "1 to 7 days forward",
+      "missing_data_handling": "Zero lookahead; drop warmup window",
+      "primary_operational_use": "Critical care ventilator capacity and 1:1 nurse staffing"
+    },
+    "bed_occupancy": {
+      "display_name": "Total Inpatient Bed Occupancy",
+      "description": "Total midnight census across general inpatient and intensive care units.",
+      "source_dataset": "data/hospital_census_daily.csv",
+      "frequency": "Daily (Midnight snapshot)",
+      "unit": "occupied beds",
+      "timestamp_convention": "Calendar Date",
+      "prediction_horizon": "1 to 7 days forward",
+      "missing_data_handling": "Zero lookahead; drop warmup window",
+      "primary_operational_use": "Hospital capacity ceiling monitoring (85% safe threshold)"
+    },
+    "supply_consumption": {
+      "display_name": "Medical Consumables Daily Usage",
+      "description": "Daily burn rate of personal protective equipment, medications, and clinical supplies.",
+      "source_dataset": "data/inventory_supplies.csv",
+      "frequency": "Daily",
+      "unit": "units consumed/day",
+      "timestamp_convention": "Calendar Date",
+      "prediction_horizon": "1 to 7 days forward",
+      "missing_data_handling": "Item-level aggregation",
+      "primary_operational_use": "Supply chain replenishment and stockout prevention"
+    }
+  }
+}

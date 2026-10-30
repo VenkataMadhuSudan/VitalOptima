@@ -1,0 +1,302 @@
+{
+  "num_trials": 15,
+  "random_seed": 42,
+  "conformal_halfwidth": 25.22,
+  "policies_compared": {
+    "Policy_A_Deterministic": {
+      "name": "Point-Forecast Deterministic Optimization",
+      "solve_time_ms": 0.0,
+      "mean_unmet_demand": 18.0,
+      "std_unmet_demand": 44.63,
+      "mean_surge_unmet": 84.67,
+      "mean_bed_utilization_pct": 54.9,
+      "mean_penalty_cost": 11064.0
+    },
+    "Policy_B_Uncertainty_Aware": {
+      "name": "Conformal Scenario-Based Two-Stage Stochastic MILP",
+      "solve_time_ms": 33.95,
+      "mean_unmet_demand": 15.73,
+      "std_unmet_demand": 42.52,
+      "mean_surge_unmet": 77.0,
+      "mean_bed_utilization_pct": 56.57,
+      "mean_penalty_cost": 8866.33,
+      "surge_unmet_demand_reduction_pct": 9.1
+    }
+  },
+  "trial_records": {
+    "deterministic": [
+      {
+        "trial": 1,
+        "regime": "Expected",
+        "realized_demand": 67,
+        "allocated": 66,
+        "unmet": 1,
+        "cost": 1200.0,
+        "bed_utilization_pct": 48.5
+      },
+      {
+        "trial": 2,
+        "regime": "Expected",
+        "realized_demand": 49,
+        "allocated": 49,
+        "unmet": 0,
+        "cost": 50.0,
+        "bed_utilization_pct": 36.0
+      },
+      {
+        "trial": 3,
+        "regime": "High",
+        "realized_demand": 120,
+        "allocated": 102,
+        "unmet": 18,
+        "cost": 15400.0,
+        "bed_utilization_pct": 75.0
+      },
+      {
+        "trial": 4,
+        "regime": "Expected",
+        "realized_demand": 65,
+        "allocated": 65,
+        "unmet": 0,
+        "cost": 200.0,
+        "bed_utilization_pct": 47.8
+      },
+      {
+        "trial": 5,
+        "regime": "Expected",
+        "realized_demand": 62,
+        "allocated": 61,
+        "unmet": 1,
+        "cost": 1300.0,
+        "bed_utilization_pct": 44.9
+      },
+      {
+        "trial": 6,
+        "regime": "Expected",
+        "realized_demand": 61,
+        "allocated": 61,
+        "unmet": 0,
+        "cost": 100.0,
+        "bed_utilization_pct": 44.9
+      },
+      {
+        "trial": 7,
+        "regime": "Expected",
+        "realized_demand": 66,
+        "allocated": 66,
+        "unmet": 0,
+        "cost": 225.0,
+        "bed_utilization_pct": 48.5
+      },
+      {
+        "trial": 8,
+        "regime": "Expected",
+        "realized_demand": 62,
+        "allocated": 62,
+        "unmet": 0,
+        "cost": 50.0,
+        "bed_utilization_pct": 45.6
+      },
+      {
+        "trial": 9,
+        "regime": "Expected",
+        "realized_demand": 88,
+        "allocated": 83,
+        "unmet": 5,
+        "cost": 5300.0,
+        "bed_utilization_pct": 61.0
+      },
+      {
+        "trial": 10,
+        "regime": "Expected",
+        "realized_demand": 68,
+        "allocated": 63,
+        "unmet": 5,
+        "cost": 5200.0,
+        "bed_utilization_pct": 46.3
+      },
+      {
+        "trial": 11,
+        "regime": "Expected",
+        "realized_demand": 69,
+        "allocated": 65,
+        "unmet": 4,
+        "cost": 4150.0,
+        "bed_utilization_pct": 47.8
+      },
+      {
+        "trial": 12,
+        "regime": "High",
+        "realized_demand": 180,
+        "allocated": 119,
+        "unmet": 61,
+        "cost": 43180.0,
+        "bed_utilization_pct": 87.5
+      },
+      {
+        "trial": 13,
+        "regime": "Expected",
+        "realized_demand": 73,
+        "allocated": 73,
+        "unmet": 0,
+        "cost": 140.0,
+        "bed_utilization_pct": 53.7
+      },
+      {
+        "trial": 14,
+        "regime": "Expected",
+        "realized_demand": 66,
+        "allocated": 66,
+        "unmet": 0,
+        "cost": 175.0,
+        "bed_utilization_pct": 48.5
+      },
+      {
+        "trial": 15,
+        "regime": "Severe",
+        "realized_demand": 294,
+        "allocated": 119,
+        "unmet": 175,
+        "cost": 89290.0,
+        "bed_utilization_pct": 87.5
+      }
+    ],
+    "stochastic": [
+      {
+        "trial": 1,
+        "regime": "Expected",
+        "realized_demand": 67,
+        "allocated": 67,
+        "unmet": 0,
+        "cost": 100.0,
+        "bed_utilization_pct": 49.3
+      },
+      {
+        "trial": 2,
+        "regime": "Expected",
+        "realized_demand": 49,
+        "allocated": 49,
+        "unmet": 0,
+        "cost": 0.0,
+        "bed_utilization_pct": 36.0
+      },
+      {
+        "trial": 3,
+        "regime": "High",
+        "realized_demand": 120,
+        "allocated": 109,
+        "unmet": 11,
+        "cost": 9330.0,
+        "bed_utilization_pct": 80.1
+      },
+      {
+        "trial": 4,
+        "regime": "Expected",
+        "realized_demand": 65,
+        "allocated": 65,
+        "unmet": 0,
+        "cost": 70.0,
+        "bed_utilization_pct": 47.8
+      },
+      {
+        "trial": 5,
+        "regime": "Expected",
+        "realized_demand": 62,
+        "allocated": 62,
+        "unmet": 0,
+        "cost": 100.0,
+        "bed_utilization_pct": 45.6
+      },
+      {
+        "trial": 6,
+        "regime": "Expected",
+        "realized_demand": 61,
+        "allocated": 61,
+        "unmet": 0,
+        "cost": 0.0,
+        "bed_utilization_pct": 44.9
+      },
+      {
+        "trial": 7,
+        "regime": "Expected",
+        "realized_demand": 66,
+        "allocated": 66,
+        "unmet": 0,
+        "cost": 125.0,
+        "bed_utilization_pct": 48.5
+      },
+      {
+        "trial": 8,
+        "regime": "Expected",
+        "realized_demand": 62,
+        "allocated": 62,
+        "unmet": 0,
+        "cost": 0.0,
+        "bed_utilization_pct": 45.6
+      },
+      {
+        "trial": 9,
+        "regime": "Expected",
+        "realized_demand": 88,
+        "allocated": 86,
+        "unmet": 2,
+        "cost": 2280.0,
+        "bed_utilization_pct": 63.2
+      },
+      {
+        "trial": 10,
+        "regime": "Expected",
+        "realized_demand": 68,
+        "allocated": 66,
+        "unmet": 2,
+        "cost": 2150.0,
+        "bed_utilization_pct": 48.5
+      },
+      {
+        "trial": 11,
+        "regime": "Expected",
+        "realized_demand": 69,
+        "allocated": 68,
+        "unmet": 1,
+        "cost": 1200.0,
+        "bed_utilization_pct": 50.0
+      },
+      {
+        "trial": 12,
+        "regime": "High",
+        "realized_demand": 180,
+        "allocated": 127,
+        "unmet": 53,
+        "cost": 35645.0,
+        "bed_utilization_pct": 93.4
+      },
+      {
+        "trial": 13,
+        "regime": "Expected",
+        "realized_demand": 73,
+        "allocated": 73,
+        "unmet": 0,
+        "cost": 165.0,
+        "bed_utilization_pct": 53.7
+      },
+      {
+        "trial": 14,
+        "regime": "Expected",
+        "realized_demand": 66,
+        "allocated": 66,
+        "unmet": 0,
+        "cost": 75.0,
+        "bed_utilization_pct": 48.5
+      },
+      {
+        "trial": 15,
+        "regime": "Severe",
+        "realized_demand": 294,
+        "allocated": 127,
+        "unmet": 167,
+        "cost": 81755.0,
+        "bed_utilization_pct": 93.4
+      }
+    ]
+  }
+}

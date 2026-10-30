@@ -1,12 +1,13 @@
 {
-  "evaluation_timestamp": "2026-10-25 10:36:29 UTC",
+  "evaluation_timestamp": "2026-10-30 19:51:29 UTC",
   "methodology": {
     "split": "Chronological 3-way split (Train 70%, Calibration 15%, Untouched Test 15%)",
     "leakage_controls": "Lag-1/7 on shift(1), rolling statistics on shift(1), 7 warmup rows dropped",
-    "interval_calibration": "Empirical residual quantiles (5th, 95th percentiles) fitted strictly on calibration split",
+    "interval_calibration": "Empirical residual quantiles and split conformal nonconformity scores fitted strictly on calibration split",
     "nominal_target_coverage": 90.0,
     "observed_heldout_coverage": 70.9,
-    "coverage_limitation_disclosure": "Observed coverage (70.9%) reflects late-year winter surge volatility in held-out test split."
+    "conformal_heldout_coverage": 78.2,
+    "coverage_limitation_disclosure": "Observed coverage reflects late-year winter surge volatility in held-out test split."
   },
   "metrics": {
     "dataset_rows": 365,
@@ -18,8 +19,11 @@
     "r2": 0.241,
     "rmse": 22.73,
     "wape_pct": 9.01,
+    "forecast_bias": -2.63,
     "nominal_coverage_pct": 90.0,
     "observed_test_coverage_pct": 70.9,
+    "conformal_test_coverage_pct": 78.2,
+    "conformal_interval_halfwidth": 25.22,
     "cal_q05": -22.38,
     "cal_q95": 20.14,
     "cal_interval_width": 42.52,
@@ -39,7 +43,31 @@
       "rolling_7_arrivals",
       "staff_ratio",
       "surgeries_lag1"
-    ]
+    ],
+    "architectures_compared": {
+      "ridge": {
+        "mae": 16.43,
+        "rmse": 22.6,
+        "wape": 8.83,
+        "bias": -0.4
+      },
+      "random_forest": {
+        "mae": 16.75,
+        "rmse": 22.73,
+        "wape": 9.01,
+        "bias": -2.63
+      },
+      "persistence": {
+        "mae": 21.38,
+        "rmse": 26.64,
+        "wape": 11.5
+      },
+      "seasonal_naive": {
+        "mae": 27.13,
+        "rmse": 38.85,
+        "wape": 14.58
+      }
+    }
   },
   "benchmarks": [
     {
@@ -70,5 +98,43 @@
       "WAPE (%)": 9.01,
       "Type": "Selected ML Model"
     }
-  ]
+  ],
+  "rolling_origin_summary": {
+    "Persistence": {
+      "mae_mean": 19.48,
+      "mae_std": 4.36,
+      "rmse_mean": 22.52,
+      "rmse_std": 4.79,
+      "wape_mean": 11.46,
+      "wape_std": 2.79,
+      "bias_mean": -2.29
+    },
+    "Random_Forest": {
+      "mae_mean": 13.4,
+      "mae_std": 3.95,
+      "rmse_mean": 16.06,
+      "rmse_std": 4.81,
+      "wape_mean": 7.84,
+      "wape_std": 2.32,
+      "bias_mean": 1.78
+    },
+    "Ridge": {
+      "mae_mean": 13.35,
+      "mae_std": 3.27,
+      "rmse_mean": 15.56,
+      "rmse_std": 3.45,
+      "wape_mean": 7.84,
+      "wape_std": 1.99,
+      "bias_mean": 0.66
+    },
+    "Seasonal_Naive": {
+      "mae_mean": 17.14,
+      "mae_std": 6.37,
+      "rmse_mean": 21.5,
+      "rmse_std": 7.35,
+      "wape_mean": 9.92,
+      "wape_std": 3.25,
+      "bias_mean": -6.57
+    }
+  }
 }
