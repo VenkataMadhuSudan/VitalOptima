@@ -175,6 +175,41 @@ class TestForecastIntegrity(unittest.TestCase):
         self.assertTrue((eval_dir / "aggregate_metrics.json").exists())
         self.assertTrue((eval_dir / "interval_coverage.json").exists())
 
+    def test_independent_validation_metrics_and_durbin_watson(self):
+        """Verifies independent validation metrics, Durbin-Watson bounds, and paired significance."""
+        import json
+        metrics_file = PROJECT_ROOT / "evaluation" / "forecasting" / "independent_validation_metrics.json"
+        self.assertTrue(metrics_file.exists(), "independent_validation_metrics.json missing")
+        with open(metrics_file, "r") as f:
+            data = json.load(f)
+
+        # Durbin-Watson statistic near 2.0
+        dw = data["residual_and_conformal_diagnostics"]["durbin_watson_statistic"]
+        self.assertTrue(1.2 <= dw <= 2.8, f"Durbin-Watson {dw} outside expected bounds")
+
+        # Ridge vs Persistence MAE reduction
+        pers_red = data["statistical_significance_tests"]["Ridge_vs_Persistence"]["mae_reduction_pct"]
+        self.assertGreaterEqual(pers_red, 20.0)
+
+        # Paired p-value
+        p_val = data["statistical_significance_tests"]["Ridge_vs_Persistence"]["paired_t_test"]["p_value"]
+        self.assertLess(p_val, 0.01)
+
+    def test_regime_shift_mathematical_consistency(self):
+        """Verifies mathematical explanation of Seasonal Naive degradation under winter surge."""
+        import json
+        metrics_file = PROJECT_ROOT / "evaluation" / "forecasting" / "independent_validation_metrics.json"
+        with open(metrics_file, "r") as f:
+            data = json.load(f)
+
+        inv = data["benchmark_inconsistency_investigation"]
+        # Test period variance must be higher than train variance (winter surge)
+        self.assertGreater(inv["test_variance"], inv["train_variance"])
+        # Lag-7 autocorrelation in test period must be lower than train period
+        self.assertLess(inv["test_lag7_autocorr"], inv["train_lag7_autocorr"])
+        # In single split, Seasonal Naive MAE is higher than Persistence
+        self.assertGreater(inv["seasonal_naive_single_mae"], inv["persistence_single_mae"])
+
 
 if __name__ == "__main__":
     unittest.main()
