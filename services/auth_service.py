@@ -145,7 +145,7 @@ def verify_password(password: str, password_hash: str, salt: str) -> bool:
 def get_sqlite_conn():
     from config import DB_PATH
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    conn = sqlite3.connect(str(DB_PATH), timeout=30.0, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 

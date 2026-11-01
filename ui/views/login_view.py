@@ -156,62 +156,66 @@ def show_login_view():
                 </div>
                 """, unsafe_allow_html=True)
 
-            # Initialize credentials in session state once (avoids double-click input desynchronization)
-            default_uname = "admin" if is_demo_mode else ""
-            default_pw = "Admin@Vital2026!" if is_demo_mode else ""
-            if "login_user_input" not in st.session_state:
-                st.session_state["login_user_input"] = default_uname
-            if "login_pass_input" not in st.session_state:
-                st.session_state["login_pass_input"] = default_pw
-
             # Show/Hide password toggle state
             show_pw = st.checkbox("Show password characters", value=False, key="toggle_show_pw")
             pw_input_type = "default" if show_pw else "password"
 
-            # Standard Credential Form (Native Form supports pressing Enter to Submit)
-            with st.form("login_form", clear_on_submit=False):
-                username = st.text_input(
-                    "Username or Employee ID",
-                    placeholder="e.g. admin or admit_officer",
-                    key="login_user_input"
-                )
-                password = st.text_input(
-                    "Password",
-                    type=pw_input_type,
-                    placeholder="Enter account password",
-                    key="login_pass_input"
-                )
+            default_uname = "admin" if is_demo_mode else ""
+            default_pw = "Admin@Vital2026!" if is_demo_mode else ""
 
-                st.markdown("<div style='height: 0.4rem;'></div>", unsafe_allow_html=True)
-                submitted = st.form_submit_button("Sign In →", type="primary", use_container_width=True)
+            # Input fields with pre-filled demo values
+            username = st.text_input(
+                "Username or Employee ID",
+                value=default_uname,
+                placeholder="e.g. admin or admit_officer",
+                key="login_user_input"
+            )
 
-                if submitted:
-                    if not username or not password:
-                        st.error("Please enter both username and password.")
+            # When Enter is pressed in password field, trigger submission
+            def _trigger_login_on_enter():
+                st.session_state["login_enter_pressed"] = True
+
+            password = st.text_input(
+                "Password",
+                value=default_pw,
+                type=pw_input_type,
+                placeholder="Enter account password",
+                key="login_pass_input",
+                on_change=_trigger_login_on_enter
+            )
+
+            st.markdown("<div style='height: 0.4rem;'></div>", unsafe_allow_html=True)
+            submitted = st.button("Sign In →", type="primary", use_container_width=True, key="login_submit_btn")
+
+            should_login = submitted or st.session_state.pop("login_enter_pressed", False)
+
+            if should_login:
+                if not username or not password:
+                    st.error("Please enter both username and password.")
+                else:
+                    clean_u = username.strip().lower()
+                    # Check lockout status first for immediate feedback
+                    is_locked, rem_sec = is_account_locked(clean_u)
+                    if is_locked:
+                        rem_min = max(1, rem_sec // 60)
+                        st.error(f"🔒 Account temporarily locked due to excessive failed attempts. Please retry in {rem_min} minute(s) or contact your hospital system administrator.")
                     else:
-                        clean_u = username.strip().lower()
-                        # Check lockout status first for immediate feedback
-                        is_locked, rem_sec = is_account_locked(clean_u)
-                        if is_locked:
-                            rem_min = max(1, rem_sec // 60)
-                            st.error(f"🔒 Account temporarily locked due to excessive failed attempts. Please retry in {rem_min} minute(s) or contact your hospital system administrator.")
-                        else:
-                            with st.spinner("Authenticating credentials via PBKDF2-HMAC-SHA256..."):
-                                user = authenticate_user(clean_u, password)
-                                if user:
-                                    if user.get("must_change_password"):
-                                        st.session_state["pending_pw_change_user"] = user
-                                        st.rerun()
-                                    else:
-                                        _login_as_user(user)
+                        with st.spinner("Authenticating credentials via PBKDF2-HMAC-SHA256..."):
+                            user = authenticate_user(clean_u, password)
+                            if user:
+                                if user.get("must_change_password"):
+                                    st.session_state["pending_pw_change_user"] = user
+                                    st.rerun()
                                 else:
-                                    # Check again if this attempt triggered a new lockout
-                                    now_locked, now_rem = is_account_locked(clean_u)
-                                    if now_locked:
-                                        rem_min = max(1, now_rem // 60)
-                                        st.error(f"🔒 Account has been locked due to 5 consecutive failed login attempts. Cooldown active for {rem_min} minute(s).")
-                                    else:
-                                        st.error("❌ Invalid username or password. Please verify your credentials.")
+                                    _login_as_user(user)
+                            else:
+                                # Check again if this attempt triggered a new lockout
+                                now_locked, now_rem = is_account_locked(clean_u)
+                                if now_locked:
+                                    rem_min = max(1, now_rem // 60)
+                                    st.error(f"🔒 Account has been locked due to 5 consecutive failed login attempts. Cooldown active for {rem_min} minute(s).")
+                                else:
+                                    st.error("❌ Invalid username or password. Please verify your credentials.")
 
             # Demo Accounts Reference Card (Only visible in demo/development mode)
             if is_demo_mode:
