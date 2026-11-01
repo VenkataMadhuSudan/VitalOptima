@@ -52,6 +52,8 @@ if "current_page" not in st.session_state:
         st.session_state["current_page"] = "Admission Workspace"
     else:
         st.session_state["current_page"] = "Dashboard"
+elif current_user["role"] != "ADMISSION_OFFICER" and st.session_state.get("current_page") == "Admission Workspace":
+    st.session_state["current_page"] = "Dashboard"
 st.session_state["theme"] = "Light Mode"
 
 # Inject custom CSS
@@ -102,10 +104,10 @@ with st.sidebar:
         if st.session_state["current_page"] != "Admission Workspace":
             st.session_state["current_page"] = "Admission Workspace"
     else:
-        # ADMIN has full access
+        # ADMIN has full executive, analytics, forecasting, optimization, and auditing access
+        # (Admission Workspace is restricted to Admission Officers for patient intake)
         nav_options = [
             "Dashboard",
-            "Admission Workspace",
             "AI Insights & Agent",
             "Resource Management",
             "Demand Forecasting",
@@ -164,7 +166,12 @@ with st.sidebar:
 active_view = st.session_state["current_page"]
 
 if active_view == "Admission Workspace":
-    show_admission_workspace()
+    if current_user.get("role") != "ADMISSION_OFFICER":
+        st.warning("ℹ️ Admission Workspace is restricted to Admission Officers. Redirecting to Executive Dashboard...")
+        st.session_state["current_page"] = "Dashboard"
+        st.rerun()
+    else:
+        show_admission_workspace()
 elif active_view == "Dashboard":
     if not has_permission(current_user, "analytics.view"):
         st.error("⛔ Access Denied: Administrator role required to view the Hospital Operations Dashboard.")

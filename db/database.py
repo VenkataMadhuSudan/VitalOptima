@@ -632,12 +632,15 @@ def record_sync_outbox(
     return event_id
 
 
-def get_pending_outbox_events(limit: int = 50):
+def get_pending_outbox_events(limit: int = 500, entity_id: str = None):
     """Retrieves pending outbox events awaiting synchronization."""
     try:
         conn = get_sqlite_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM sync_outbox WHERE status = 'PENDING' ORDER BY id ASC LIMIT ?", (limit,))
+        if entity_id:
+            cursor.execute("SELECT * FROM sync_outbox WHERE status = 'PENDING' AND entity_id = ? ORDER BY id ASC LIMIT ?", (entity_id, limit))
+        else:
+            cursor.execute("SELECT * FROM sync_outbox WHERE status = 'PENDING' ORDER BY id ASC LIMIT ?", (limit,))
         rows = [dict(r) for r in cursor.fetchall()]
         conn.close()
         return rows

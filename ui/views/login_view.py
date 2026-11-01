@@ -156,24 +156,27 @@ def show_login_view():
                 </div>
                 """, unsafe_allow_html=True)
 
+            # Initialize credentials in session state once (avoids double-click input desynchronization)
+            default_uname = "admin" if is_demo_mode else ""
+            default_pw = "Admin@Vital2026!" if is_demo_mode else ""
+            if "login_user_input" not in st.session_state:
+                st.session_state["login_user_input"] = default_uname
+            if "login_pass_input" not in st.session_state:
+                st.session_state["login_pass_input"] = default_pw
+
             # Show/Hide password toggle state
             show_pw = st.checkbox("Show password characters", value=False, key="toggle_show_pw")
             pw_input_type = "default" if show_pw else "password"
 
             # Standard Credential Form (Native Form supports pressing Enter to Submit)
             with st.form("login_form", clear_on_submit=False):
-                default_uname = "admin" if is_demo_mode else ""
-                default_pw = "Admin@Vital2026!" if is_demo_mode else ""
-
                 username = st.text_input(
                     "Username or Employee ID",
-                    value=st.session_state.get("login_username_field", default_uname),
                     placeholder="e.g. admin or admit_officer",
                     key="login_user_input"
                 )
                 password = st.text_input(
                     "Password",
-                    value=st.session_state.get("login_password_field", default_pw),
                     type=pw_input_type,
                     placeholder="Enter account password",
                     key="login_pass_input"

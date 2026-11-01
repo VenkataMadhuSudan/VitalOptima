@@ -310,12 +310,10 @@ def render_interactive_whatif_simulator_card():
 
 
 
-@st.fragment(run_every=8)
 def render_live_dashboard_kpis():
     """
-    Live auto-refreshing KPI fragment that queries authoritative database metrics every 8 seconds.
-    Ensures that admissions and discharges made by Admission Officers update the Admin dashboard
-    within 8-15 seconds automatically without full page reload.
+    Authoritative KPI rendering that queries database metrics.
+    Live synchronization status with on-demand refresh capability.
     """
     metrics = get_live_bed_metrics()
     gen_occ = metrics.get("general_occupied", GENERAL_BEDS_OCCUPIED)
@@ -331,18 +329,18 @@ def render_live_dashboard_kpis():
     sync_v = metrics.get("sync_version", 1)
     sync_time = metrics.get("last_updated", "")
 
-    # Live synchronization status tag
-    st.html(f"""
-    <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.35rem 0.75rem; border-radius: 6px; margin-bottom: 0.65rem; font-size: 0.75rem; color: #475569;">
-        <div style="display: flex; align-items: center; gap: 0.4rem;">
+    # Live synchronization status tag with manual refresh button
+    col_status_info, col_status_action = st.columns([5, 1])
+    with col_status_info:
+        st.html(f"""
+        <div style="display: flex; align-items: center; gap: 0.4rem; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 0.38rem 0.75rem; border-radius: 6px; margin-bottom: 0.65rem; font-size: 0.75rem; color: #475569;">
             <span style="color: #10B981; font-size: 0.85rem;">●</span>
-            <b>Live Operational Metrics:</b> Dynamic DB Sync (Cycle #{sync_v} • Updated: {sync_time or 'Just now'})
+            <b>Live Operational Metrics:</b> Synced with Hospital DB (Cycle #{sync_v} • Updated: {sync_time or 'Just now'})
         </div>
-        <div style="color: #64748B;">
-            Auto-refresh active (8s polling) • Zero manual reload required
-        </div>
-    </div>
-    """)
+        """)
+    with col_status_action:
+        if st.button("🔄 Refresh", key="kpi_manual_refresh", help="Re-sync bed counts from database", use_container_width=True):
+            st.rerun()
 
     # Top Row - 4 Precision Compact KPI Cards
     k1, k2, k3, k4 = st.columns(4)

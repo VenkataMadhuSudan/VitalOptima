@@ -45,16 +45,14 @@ def render_admission_kpi_cards(metrics: dict, active_count: int):
         st.metric(
             label="Data Synchronization",
             value=f"v{sync_v} Live",
-            delta=f"Auto-Sync: 8s Polling",
+            delta=f"Active DB Sync",
             delta_color="normal"
         )
 
 
-@st.fragment(run_every=8)
 def render_live_admission_workspace(user: dict):
     """
-    Auto-refreshing fragment that polls database state every 8 seconds.
-    Ensures cross-user updates appear within < 15 seconds without manual page refreshes.
+    Renders live admission workspace displaying real-time bed metrics, active patient census, and triage tools.
     """
     metrics = get_live_bed_metrics()
     active_admissions = get_active_admissions()

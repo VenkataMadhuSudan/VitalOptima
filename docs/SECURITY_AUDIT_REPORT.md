@@ -164,3 +164,4 @@ OK
 2. **PostgreSQL Connection Encryption:** In multi-node hospital environments, database connections must enforce `sslmode=verify-full`.
 3. **Hardware Security Module (HSM) / KMS:** While PBKDF2-HMAC-SHA256 provides strong software-level defense, integrating AWS KMS or HashiCorp Vault for database encryption at rest is recommended for tertiary hospital enterprise deployments.
 4. **Periodic Audit Checkpoint Archival:** Schedule an automated daily cron job exporting signed audit checkpoints (`export_audit_chain_checkpoint()`) to write-once-read-many (WORM) storage.
+

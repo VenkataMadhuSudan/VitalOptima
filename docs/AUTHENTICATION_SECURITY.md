@@ -232,3 +232,4 @@ $$\text{record\_hash}_i = \text{SHA256}\left(\text{JSON}_{\text{canonical}}\left
 
 * **Chain Verification:** `verify_audit_log_chain()` traverses the database from genesis to head, recalculating hashes to identify any modified records, dropped rows, or reordered entries.
 * **Checkpoint Signatures:** `export_audit_chain_checkpoint()` signs the chain head and record count to detect trailing truncation attacks where an adversary attempts to delete recent logs.
+
