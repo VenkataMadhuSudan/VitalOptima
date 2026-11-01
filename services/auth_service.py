@@ -6,6 +6,8 @@ defense-in-depth permission enforcement, session handling, and tamper-resistant 
 import hashlib
 import secrets
 import sqlite3
+import time
+import re
 from datetime import datetime
 from typing import Optional, Dict, Any, List, Set
 from pathlib import Path
@@ -60,10 +62,38 @@ _FAILED_LOGINS = {}
 _FAILED_LOGIN_LOCK = threading.Lock()
 MAX_FAILED_ATTEMPTS = 5
 LOCKOUT_WINDOW_SECONDS = 900  # 15 minutes
+MAX_FAILED_IP_ATTEMPTS = 15
+SESSION_IDLE_TIMEOUT_SECONDS = 1800       # 30 minutes
+SESSION_ABSOLUTE_LIFETIME_SECONDS = 28800  # 8 hours
+
+# Timing attack mitigation static dummy salt
+_DUMMY_SALT = "0" * 32
 
 # Modern cryptographic parameters (OWASP Password Storage Cheat Sheet recommendation for PBKDF2-HMAC-SHA256)
 DEFAULT_PBKDF2_ITERATIONS = 600000
 LEGACY_PBKDF2_ITERATIONS = 100000
+
+
+def validate_password_complexity(password: str) -> tuple[bool, str]:
+    """
+    Validates password complexity against healthcare SaaS security standards:
+    - Minimum 8 characters
+    - At least 1 uppercase letter
+    - At least 1 lowercase letter
+    - At least 1 digit
+    - At least 1 special character
+    """
+    if not password or len(password) < 8:
+        return False, "Password must be at least 8 characters in length."
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must include at least one uppercase letter (A-Z)."
+    if not re.search(r"[a-z]", password):
+        return False, "Password must include at least one lowercase letter (a-z)."
+    if not re.search(r"\d", password):
+        return False, "Password must include at least one numerical digit (0-9)."
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>\-_=+\[\]\\/`~]", password):
+        return False, "Password must include at least one special character."
+    return True, "Password meets complexity requirements."
 
 
 def hash_password(password: str, salt: Optional[str] = None, iterations: int = DEFAULT_PBKDF2_ITERATIONS) -> tuple[str, str]:
@@ -120,6 +150,287 @@ def get_sqlite_conn():
     return conn
 
 
+
+def record_login_attempt(identifier: str, attempt_type: str, success: bool, ip_address: Optional[str] = None):
+    """
+    Records a login attempt persistently in SQLite and PostgreSQL.
+    Tracks both username and client IP for persistent brute-force mitigation.
+    """
+    if not identifier:
+        return
+    clean_id = identifier.strip().lower()
+    now_ts = time.time()
+    suc_int = 1 if success else 0
+
+    # Write to SQLite
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO login_attempts (identifier, attempt_type, attempt_time, success, ip_address)
+            VALUES (?, ?, ?, ?, ?)
+        """, (clean_id, attempt_type, now_ts, suc_int, ip_address))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[Auth] Warning recording login attempt to SQLite: {e}")
+
+    # Write to Postgres if available
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.begin() as pg_conn:
+                pg_conn.execute(text("""
+                    INSERT INTO login_attempts (identifier, attempt_type, attempt_time, success, ip_address)
+                    VALUES (:ident, :atype, :atime, :suc, :ip);
+                """), {"ident": clean_id, "atype": attempt_type, "atime": now_ts, "suc": suc_int, "ip": ip_address})
+    except Exception:
+        pass
+
+
+def is_account_locked(username: str) -> tuple[bool, int]:
+    """
+    Checks if an account is locked due to >= 5 failed attempts in the last 15 minutes.
+    Queries persistent database storage to survive application restarts.
+    Returns (is_locked, remaining_lockout_seconds).
+    """
+    if not username:
+        return False, 0
+    clean_user = username.strip().lower()
+    now_ts = time.time()
+    cutoff_ts = now_ts - LOCKOUT_WINDOW_SECONDS
+
+    # 1. Query persistent SQLite
+    recent_failures = []
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT attempt_time FROM login_attempts
+            WHERE LOWER(identifier) = ? AND attempt_type = 'username' AND success = 0 AND attempt_time >= ?
+            ORDER BY attempt_time ASC
+        """, (clean_user, cutoff_ts))
+        recent_failures = [float(r["attempt_time"]) for r in cursor.fetchall()]
+        conn.close()
+    except Exception:
+        pass
+
+    # 2. Check in-memory mirror as well (for test compatibility)
+    with _FAILED_LOGIN_LOCK:
+        in_mem = [ts for ts in _FAILED_LOGINS.get(clean_user, []) if ts >= cutoff_ts]
+        _FAILED_LOGINS[clean_user] = in_mem
+
+    total_count = max(len(recent_failures), len(_FAILED_LOGINS.get(clean_user, [])))
+    if total_count >= MAX_FAILED_ATTEMPTS:
+        oldest_ts = recent_failures[0] if recent_failures else (_FAILED_LOGINS[clean_user][0] if _FAILED_LOGINS.get(clean_user) else cutoff_ts)
+        remaining = int(LOCKOUT_WINDOW_SECONDS - (now_ts - oldest_ts))
+        return True, max(1, remaining)
+
+    return False, 0
+
+
+def is_ip_locked(ip_address: Optional[str]) -> tuple[bool, int]:
+    """
+    Checks if an IP address is throttled due to excessive failed attempts across accounts.
+    Returns (is_locked, remaining_lockout_seconds).
+    """
+    if not ip_address:
+        return False, 0
+    clean_ip = ip_address.strip()
+    now_ts = time.time()
+    cutoff_ts = now_ts - LOCKOUT_WINDOW_SECONDS
+
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT attempt_time FROM login_attempts
+            WHERE identifier = ? AND attempt_type = 'ip' AND success = 0 AND attempt_time >= ?
+            ORDER BY attempt_time ASC
+        """, (clean_ip, cutoff_ts))
+        failures = [float(r["attempt_time"]) for r in cursor.fetchall()]
+        conn.close()
+        if len(failures) >= MAX_FAILED_IP_ATTEMPTS:
+            remaining = int(LOCKOUT_WINDOW_SECONDS - (now_ts - failures[0]))
+            return True, max(1, remaining)
+    except Exception:
+        pass
+    return False, 0
+
+
+def clear_failed_login_attempts(username: str, ip_address: Optional[str] = None):
+    """Resets failed attempt counters upon successful authentication."""
+    clean_user = username.strip().lower()
+    with _FAILED_LOGIN_LOCK:
+        _FAILED_LOGINS.pop(clean_user, None)
+
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM login_attempts WHERE LOWER(identifier) = ? AND attempt_type = 'username'", (clean_user,))
+        if ip_address:
+            cursor.execute("DELETE FROM login_attempts WHERE identifier = ? AND attempt_type = 'ip'", (ip_address.strip(),))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+def create_server_session(username: str, ip_address: Optional[str] = None, user_agent: Optional[str] = None) -> str:
+    """
+    Creates a server-side tracked session token with idle and absolute lifetime limits.
+    """
+    session_token = secrets.token_urlsafe(32)
+    now_epoch = time.time()
+    clean_user = username.strip().lower()
+
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO active_sessions (session_id, username, created_at, last_activity_at, ip_address, user_agent, is_revoked)
+            VALUES (?, ?, ?, ?, ?, ?, 0)
+        """, (session_token, clean_user, now_epoch, now_epoch, ip_address, user_agent))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[Auth] Notice creating server session in SQLite: {e}")
+
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.begin() as pg_conn:
+                pg_conn.execute(text("""
+                    INSERT INTO active_sessions (session_id, username, created_at, last_activity_at, ip_address, user_agent, is_revoked)
+                    VALUES (:sid, :u, :cat, :lat, :ip, :ua, false)
+                    ON CONFLICT (session_id) DO NOTHING;
+                """), {"sid": session_token, "u": clean_user, "cat": now_epoch, "lat": now_epoch, "ip": ip_address, "ua": user_agent})
+    except Exception:
+        pass
+
+    return session_token
+
+
+def validate_server_session(
+    session_token: str,
+    max_age_seconds: int = SESSION_ABSOLUTE_LIFETIME_SECONDS,
+    max_idle_seconds: int = SESSION_IDLE_TIMEOUT_SECONDS
+) -> Optional[Dict[str, Any]]:
+    """
+    Authoritatively validates a server-side session token.
+    Enforces idle timeout, absolute lifetime, account activity, and revocation.
+    Returns the refreshed user dictionary if valid, or None if invalid.
+    """
+    if not session_token:
+        return None
+
+    now_epoch = time.time()
+
+    # Query SQLite active_sessions
+    session_row = None
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM active_sessions WHERE session_id = ? LIMIT 1", (session_token,))
+        session_row = cursor.fetchone()
+        conn.close()
+    except Exception:
+        pass
+
+    if not session_row:
+        return None
+
+    if bool(session_row["is_revoked"]):
+        return None
+
+    # Check absolute lifetime
+    session_created = float(session_row["created_at"])
+    if now_epoch - session_created > max_age_seconds:
+        revoke_server_session(session_token)
+        log_audit_event(
+            actor_username=session_row["username"],
+            actor_role="SESSION",
+            action="auth.session_expired_absolute",
+            status="DENIED",
+            details="Session exceeded maximum permitted absolute lifetime."
+        )
+        return None
+
+    # Check idle timeout
+    last_act = float(session_row["last_activity_at"])
+    if now_epoch - last_act > max_idle_seconds:
+        revoke_server_session(session_token)
+        log_audit_event(
+            actor_username=session_row["username"],
+            actor_role="SESSION",
+            action="auth.session_idle_timeout",
+            status="DENIED",
+            details="Session terminated due to inactivity."
+        )
+        return None
+
+    # Verify user account in database remains active
+    user = get_user_by_username(session_row["username"])
+    if not user or not user.get("is_active"):
+        revoke_server_session(session_token)
+        return None
+
+    # Touch session last_activity_at
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE active_sessions SET last_activity_at = ? WHERE session_id = ?", (now_epoch, session_token))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+    safe_user = {
+        "id": user["id"],
+        "username": user["username"],
+        "role": user["role"],
+        "full_name": user["full_name"],
+        "department": user.get("department", "Hospital"),
+        "last_login": user.get("last_login"),
+        "login_timestamp": session_created,
+        "must_change_password": bool(user.get("must_change_password", 0)),
+        "session_token": session_token
+    }
+    return safe_user
+
+
+def revoke_server_session(session_token: str):
+    """Explicitly revokes a session token (e.g. on logout or timeout)."""
+    if not session_token:
+        return
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE active_sessions SET is_revoked = 1 WHERE session_id = ?", (session_token,))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+def revoke_all_user_sessions(username: str):
+    """Revokes all active sessions for a user (e.g. upon password change or account deactivation)."""
+    if not username:
+        return
+    clean_user = username.strip().lower()
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE active_sessions SET is_revoked = 1 WHERE LOWER(username) = ?", (clean_user,))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
 def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
     """Retrieves an active user record by username."""
     if not username:
@@ -157,11 +468,20 @@ def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
+def authenticate_user(
+    username: str,
+    password: str,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
     """
-    Authenticates a user against server-side stored credentials.
+    Authenticates a user against server-side stored credentials with:
+    - Persistent rate limiting & brute-force account lockout.
+    - IP-based rate limiting against distributed brute-force attempts.
+    - Timing-attack resistance via constant-time dummy hashing for nonexistent accounts.
+    - Server-side session tracking with anti-fixation token creation.
+    - Comprehensive cryptographic audit logging.
     Returns sanitized user profile dict on success, None on failure.
-    Logs authentication success or failure to the audit trail.
     """
     if not username or not password:
         log_audit_event(
@@ -173,49 +493,75 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
         )
         return None
 
-    user = get_user_by_username(username)
-    if not user:
-        log_audit_event(
-            actor_username=username,
-            actor_role="UNKNOWN",
-            action="auth.login",
-            status="FAILED",
-            details="User not found or inactive"
-        )
-        return None
-
-    # Rate limiting & brute-force throttling check
-    import time
-    u_key = username.strip().lower()
+    clean_user = username.strip().lower()
     now_epoch = time.time()
-    with _FAILED_LOGIN_LOCK:
-        recent_fails = [ts for ts in _FAILED_LOGINS.get(u_key, []) if now_epoch - ts < LOCKOUT_WINDOW_SECONDS]
-        _FAILED_LOGINS[u_key] = recent_fails
-        if len(recent_fails) >= MAX_FAILED_ATTEMPTS:
+
+    # 1. IP-based rate limiting check
+    if ip_address:
+        ip_locked, ip_rem = is_ip_locked(ip_address)
+        if ip_locked:
             log_audit_event(
-                actor_username=user["username"],
-                actor_role=user["role"],
+                actor_username=clean_user,
+                actor_role="UNKNOWN",
                 action="auth.login",
                 status="DENIED",
-                details=f"Account temporarily locked: {len(recent_fails)} consecutive failed attempts. 15-minute cooldown active."
+                details=f"IP address '{ip_address}' temporarily blocked due to excessive failed attempts ({ip_rem}s remaining)."
             )
             return None
 
-    if not verify_password(password, user["password_hash"], user["salt"]):
+    # 2. Account-based rate limiting check
+    acct_locked, rem_secs = is_account_locked(clean_user)
+    if acct_locked:
+        log_audit_event(
+            actor_username=clean_user,
+            actor_role="UNKNOWN",
+            action="auth.login",
+            status="DENIED",
+            details=f"Account temporarily locked due to excessive failed attempts ({rem_secs}s cooldown active)."
+        )
+        return None
+
+    user = get_user_by_username(clean_user)
+
+    # 3. User does not exist or is inactive:
+    # Execute dummy PBKDF2 calculation to equalize response timing and prevent user enumeration
+    if not user:
+        hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), _DUMMY_SALT.encode('utf-8'), DEFAULT_PBKDF2_ITERATIONS)
+        record_login_attempt(clean_user, 'username', success=False, ip_address=ip_address)
+        if ip_address:
+            record_login_attempt(ip_address, 'ip', success=False, ip_address=ip_address)
         with _FAILED_LOGIN_LOCK:
-            _FAILED_LOGINS.setdefault(u_key, []).append(now_epoch)
+            _FAILED_LOGINS.setdefault(clean_user, []).append(now_epoch)
+
+        log_audit_event(
+            actor_username=clean_user,
+            actor_role="UNKNOWN",
+            action="auth.login",
+            status="FAILED",
+            details="Authentication failed (invalid credentials)"
+        )
+        return None
+
+    # 4. Verify password against stored hash
+    if not verify_password(password, user["password_hash"], user["salt"]):
+        record_login_attempt(clean_user, 'username', success=False, ip_address=ip_address)
+        if ip_address:
+            record_login_attempt(ip_address, 'ip', success=False, ip_address=ip_address)
+        with _FAILED_LOGIN_LOCK:
+            _FAILED_LOGINS.setdefault(clean_user, []).append(now_epoch)
+
         log_audit_event(
             actor_username=user["username"],
             actor_role=user["role"],
             action="auth.login",
             status="FAILED",
-            details=f"Invalid password attempt (Attempt {len(_FAILED_LOGINS.get(u_key, []))}/{MAX_FAILED_ATTEMPTS})"
+            details="Authentication failed (invalid credentials)"
         )
         return None
 
-    # Clear failed attempts upon successful authentication
-    with _FAILED_LOGIN_LOCK:
-        _FAILED_LOGINS.pop(u_key, None)
+    # 5. Successful authentication: clear failed attempt history
+    clear_failed_login_attempts(clean_user, ip_address=ip_address)
+    record_login_attempt(clean_user, 'username', success=True, ip_address=ip_address)
 
     # Rehash-on-login migration: if user authenticated using legacy iterations, upgrade to 600,000
     try:
@@ -237,7 +583,7 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         print(f"[Auth] Notice during rehash-on-login upgrade: {e}")
 
-    # Update last login
+    # Update last login timestamp
     now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     try:
         conn = get_sqlite_conn()
@@ -247,6 +593,9 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
         conn.close()
     except Exception:
         pass
+
+    # Create server-side session token
+    session_token = create_server_session(user["username"], ip_address=ip_address, user_agent=user_agent)
 
     # Audit login success
     log_audit_event(
@@ -265,7 +614,9 @@ def authenticate_user(username: str, password: str) -> Optional[Dict[str, Any]]:
         "full_name": user["full_name"],
         "department": user.get("department", "Hospital"),
         "last_login": now_str,
-        "login_timestamp": time.time()
+        "login_timestamp": now_epoch,
+        "must_change_password": bool(user.get("must_change_password", 0)),
+        "session_token": session_token
     }
     return safe_user
 
@@ -338,26 +689,47 @@ def require_role(allowed_roles: List[str], user: Optional[Dict[str, Any]] = None
 
 
 def get_current_user() -> Optional[Dict[str, Any]]:
-    """Retrieves the currently authenticated user from Streamlit session state if available."""
+    """
+    Retrieves the currently authenticated user from Streamlit session state.
+    Defense-in-depth: If a session token exists, authoritatively validates it against
+    the database to enforce idle timeout, absolute lifetime, and active status,
+    and resets any client-side role tampering.
+    """
     try:
         import streamlit as st
         if hasattr(st, "session_state") and "authenticated_user" in st.session_state:
-            return st.session_state["authenticated_user"]
+            cached_user = st.session_state["authenticated_user"]
+            if cached_user and isinstance(cached_user, dict):
+                token = cached_user.get("session_token")
+                if token:
+                    valid_user = validate_server_session(token)
+                    if not valid_user:
+                        # Session has expired, timed out, or been revoked
+                        del st.session_state["authenticated_user"]
+                        return None
+                    # Overwrite client-cached fields with authoritative DB values
+                    for field in ("role", "full_name", "department", "must_change_password"):
+                        if field in valid_user:
+                            cached_user[field] = valid_user[field]
+                return cached_user
     except Exception:
         pass
     return None
 
 
 def logout_user():
-    """Logs out current user, records audit event, and purges session state."""
+    """Logs out current user, invalidates server-side session, records audit event, and purges session state."""
     current = get_current_user()
     if current:
+        token = current.get("session_token")
+        if token:
+            revoke_server_session(token)
         log_audit_event(
             actor_username=current.get("username", "user"),
             actor_role=current.get("role", "UNKNOWN"),
             action="auth.logout",
             status="SUCCESS",
-            details="User logged out"
+            details="User logged out and session revoked"
         )
     try:
         import streamlit as st
@@ -658,7 +1030,8 @@ def create_new_user(
     role: str,
     full_name: str,
     department: Optional[str] = None,
-    actor_user: Optional[Dict[str, Any]] = None
+    actor_user: Optional[Dict[str, Any]] = None,
+    must_change_password: bool = False
 ) -> Dict[str, Any]:
     """
     Provisions a new authorized user account (ADMIN or ADMISSION_OFFICER).
@@ -691,14 +1064,15 @@ def create_new_user(
 
     pw_hash, salt = hash_password(password.strip())
     now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    must_change_int = 1 if must_change_password else 0
 
     # 1. SQLite insert
     conn = get_sqlite_conn()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-    """, (clean_user, pw_hash, salt, clean_role, clean_name, clean_dept, now_ts))
+        INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at, must_change_password)
+        VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
+    """, (clean_user, pw_hash, salt, clean_role, clean_name, clean_dept, now_ts, must_change_int))
     user_id = cursor.lastrowid
     conn.commit()
     conn.close()
@@ -711,12 +1085,12 @@ def create_new_user(
         if engine is not None:
             with engine.begin() as pg_conn:
                 pg_conn.execute(text("""
-                    INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
-                    VALUES (:u, :h, :s, :r, :fn, :d, true, :ts)
+                    INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at, must_change_password)
+                    VALUES (:u, :h, :s, :r, :fn, :d, true, :ts, :mcp)
                     ON CONFLICT (username) DO NOTHING;
                 """), {
                     "u": clean_user, "h": pw_hash, "s": salt, "r": clean_role,
-                    "fn": clean_name, "d": clean_dept, "ts": datetime.utcnow()
+                    "fn": clean_name, "d": clean_dept, "ts": datetime.utcnow(), "mcp": bool(must_change_password)
                 })
     except Exception as e:
         print(f"[Auth] Warning writing new user to Postgres: {e}")
@@ -738,7 +1112,8 @@ def create_new_user(
         "role": clean_role,
         "full_name": clean_name,
         "department": clean_dept,
-        "created_at": now_ts
+        "created_at": now_ts,
+        "must_change_password": bool(must_change_password)
     }
 
 
@@ -1138,3 +1513,196 @@ def verify_audit_checkpoint(checkpoint_file: Path) -> Dict[str, Any]:
         "current_records": curr_count,
         "details": "Audit chain matches or extends exported cryptographic checkpoint."
     }
+
+
+def provision_initial_admin(
+    username: str = "admin",
+    password: Optional[str] = None,
+    full_name: str = "Hospital Administrator",
+    department: str = "Hospital Administration"
+) -> Dict[str, Any]:
+    """
+    Securely provisions an initial administrator account if and only if no administrator exists.
+    - If an admin account exists: preserves it and refuses to overwrite.
+    - If password is not provided: reads ADMIN_INITIAL_PASSWORD env or generates a strong random secret.
+    - Marks must_change_password = 1 so credentials must be changed upon first login.
+    - Never prints secrets to application logs.
+    """
+    clean_user = username.strip().lower()
+
+    # Check if ANY active administrator already exists in database
+    conn = get_sqlite_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT id, username, full_name, role FROM users WHERE role = 'ADMIN' AND is_active = 1 LIMIT 1")
+    existing_admin = cur.fetchone()
+    conn.close()
+
+    if existing_admin:
+        return {
+            "created": False,
+            "username": existing_admin["username"],
+            "message": f"Administrator account '{existing_admin['username']}' already exists. Existing credentials preserved."
+        }
+
+    import os
+    initial_pw = password or os.getenv("ADMIN_INITIAL_PASSWORD")
+    generated_randomly = False
+
+    if not initial_pw:
+        generated_randomly = True
+        # Generate cryptographically secure random password meeting all complexity rules
+        import string
+        upper = secrets.choice(string.ascii_uppercase)
+        lower = secrets.choice(string.ascii_lowercase)
+        digits = secrets.choice(string.digits)
+        symbols = secrets.choice("!@#$%&*_-")
+        extra_chars = [secrets.choice(string.ascii_letters + string.digits + "!@#$%&*_-") for _ in range(12)]
+        combined = list(upper + lower + digits + symbols + "".join(extra_chars))
+        secrets.SystemRandom().shuffle(combined)
+        initial_pw = "".join(combined)
+
+    valid, msg = validate_password_complexity(initial_pw)
+    if not valid:
+        raise ValueError(f"Initial administrator password invalid: {msg}")
+
+    pw_hash, salt = hash_password(initial_pw)
+    now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Insert into SQLite
+    conn = get_sqlite_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at, must_change_password)
+        VALUES (?, ?, ?, 'ADMIN', ?, ?, 1, ?, 1)
+    """, (clean_user, pw_hash, salt, full_name, department, now_ts))
+    user_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+
+    # Insert into Postgres if available
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.begin() as pg_conn:
+                pg_conn.execute(text("""
+                    INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at, must_change_password)
+                    VALUES (:u, :h, :s, 'ADMIN', :fn, :dept, true, NOW(), true)
+                    ON CONFLICT (username) DO NOTHING;
+                """), {"u": clean_user, "h": pw_hash, "s": salt, "fn": full_name, "dept": department})
+    except Exception:
+        pass
+
+    log_audit_event(
+        actor_username="system.provisioning",
+        actor_role="SYSTEM",
+        action="users.initial_admin_provisioned",
+        target_id=clean_user,
+        target_type="user",
+        status="SUCCESS",
+        details="Initial administrator account created. Password change required upon first sign-in."
+    )
+
+    return {
+        "created": True,
+        "id": user_id,
+        "username": clean_user,
+        "full_name": full_name,
+        "role": "ADMIN",
+        "temporary_password": initial_pw if generated_randomly or password else "[CONFIDENTIAL]",
+        "must_change_password": True
+    }
+
+
+def reauthenticate_admin(username: str, password: str) -> bool:
+    """
+    Reauthenticates an administrator before performing high-risk actions
+    (e.g., account deletion, mass data purge, security configuration update).
+    """
+    if not username or not password:
+        return False
+    user = get_user_by_username(username.strip().lower())
+    if not user or not user.get("is_active") or user.get("role") != ROLE_ADMIN:
+        return False
+    return verify_password(password, user["password_hash"], user["salt"])
+
+
+def change_user_password(
+    username: str,
+    current_password: str,
+    new_password: str,
+    actor_user: Optional[Dict[str, Any]] = None
+) -> tuple[bool, str]:
+    """
+    Securely changes a user's password:
+    - Verifies current password.
+    - Validates new password complexity.
+    - Ensures new password differs from current.
+    - Resets must_change_password = 0.
+    - Invalidates all existing sessions for the user.
+    """
+    clean_user = username.strip().lower()
+    user = get_user_by_username(clean_user)
+    if not user or not user.get("is_active"):
+        return False, "User account not found or inactive."
+
+    # Verify current password
+    if not verify_password(current_password, user["password_hash"], user["salt"]):
+        log_audit_event(
+            actor_username=clean_user,
+            actor_role=user.get("role", "UNKNOWN"),
+            action="users.password_change",
+            status="FAILED",
+            details="Password change rejected: current password verification failed."
+        )
+        return False, "Current password verification failed."
+
+    # Check that new password is not identical to old
+    if verify_password(new_password, user["password_hash"], user["salt"]):
+        return False, "New password cannot be identical to the current password."
+
+    # Validate complexity
+    valid, msg = validate_password_complexity(new_password)
+    if not valid:
+        return False, msg
+
+    new_hash, new_salt = hash_password(new_password)
+
+    # Update in SQLite
+    conn = get_sqlite_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE users
+        SET password_hash = ?, salt = ?, must_change_password = 0
+        WHERE LOWER(username) = ?
+    """, (new_hash, new_salt, clean_user))
+    conn.commit()
+    conn.close()
+
+    # Update in Postgres
+    try:
+        from db.postgres import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        if engine is not None:
+            with engine.begin() as pg_conn:
+                pg_conn.execute(text("""
+                    UPDATE users
+                    SET password_hash = :h, salt = :s, must_change_password = false
+                    WHERE LOWER(username) = :u;
+                """), {"h": new_hash, "s": new_salt, "u": clean_user})
+    except Exception:
+        pass
+
+    # Invalidate all prior sessions for security
+    revoke_all_user_sessions(clean_user)
+
+    log_audit_event(
+        actor_username=clean_user,
+        actor_role=user.get("role", "USER"),
+        action="users.password_change",
+        status="SUCCESS",
+        details="User password updated successfully. All active sessions invalidated."
+    )
+    return True, "Password updated successfully."

@@ -10,7 +10,7 @@ from config import HOSPITAL_NAME, ADMIN_USER, ADMIN_INITIALS, get_system_timesta
 from services.auth_service import (
     get_current_user, require_permission, has_permission,
     get_all_users, create_new_user, toggle_user_status, delete_user,
-    update_user_password, update_user_profile,
+    update_user_password, update_user_profile, validate_password_complexity,
     get_recent_audit_logs, ROLE_ADMIN, ROLE_ADMISSION_OFFICER
 )
 from ui.components import render_top_nav, render_footer
@@ -247,18 +247,22 @@ def show_settings_view():
                     with pw_btn_col:
                         st.markdown("<div style='height: 1.7rem;'></div>", unsafe_allow_html=True)
                         if st.button("💾 Set Password", width="stretch", type="primary", key=f"btn_update_pw_{selected_username}"):
-                            if not new_pw_input or len(new_pw_input.strip()) < 6:
-                                st.error("Password must be at least 6 characters long.")
+                            if not new_pw_input:
+                                st.error("Please enter a new password.")
                             elif new_pw_input.strip() != confirm_pw_input.strip():
                                 st.error("Passwords do not match. Please verify both fields.")
                             else:
-                                try:
-                                    update_user_password(selected_username, new_pw_input.strip(), actor_user=user)
-                                    msg = "Your administrator password has been updated!" if is_self else f"Password for '{selected_username}' has been updated!"
-                                    st.success(msg)
-                                    st.rerun()
-                                except Exception as e_pw:
-                                    st.error(str(e_pw))
+                                valid, msg = validate_password_complexity(new_pw_input.strip())
+                                if not valid:
+                                    st.error(f"❌ {msg}")
+                                else:
+                                    try:
+                                        update_user_password(selected_username, new_pw_input.strip(), actor_user=user)
+                                        success_msg = "Your administrator password has been updated!" if is_self else f"Password for '{selected_username}' has been updated!"
+                                        st.success(success_msg)
+                                        st.rerun()
+                                    except Exception as e_pw:
+                                        st.error(str(e_pw))
 
     # =========================================================================
     # TAB 2: PROVISION NEW ACCESSOR ACCOUNT
@@ -312,9 +316,11 @@ def show_settings_view():
 
                 p1, p2 = st.columns(2)
                 with p1:
-                    new_pw = st.text_input("Password *", type="password", placeholder="Min 6 characters", key="new_u_pw")
+                    new_pw = st.text_input("Temporary Password *", type="password", placeholder="Min 8 characters", key="new_u_pw")
                 with p2:
-                    new_pw_conf = st.text_input("Confirm Password *", type="password", placeholder="Re-enter password", key="new_u_pw_conf")
+                    new_pw_conf = st.text_input("Confirm Temporary Password *", type="password", placeholder="Re-enter password", key="new_u_pw_conf")
+
+                force_mcp = st.checkbox("Require password change upon first login", value=True, key="new_u_force_mcp")
 
                 st.markdown("<div style='height: 0.35rem;'></div>", unsafe_allow_html=True)
                 if st.button("👤 Provision Accessor Account", type="primary", width="stretch", key="btn_submit_new_user"):
@@ -322,25 +328,30 @@ def show_settings_view():
                         st.error("Username is required.")
                     elif not new_fullname.strip():
                         st.error("Full Name is required.")
-                    elif not new_pw or len(new_pw.strip()) < 6:
-                        st.error("Password must be at least 6 characters long.")
+                    elif not new_pw:
+                        st.error("Password is required.")
                     elif new_pw != new_pw_conf:
                         st.error("Passwords do not match. Please verify your entries.")
                     else:
-                        try:
-                            created = create_new_user(
-                                username=new_username,
-                                password=new_pw,
-                                role=new_role,
-                                full_name=new_fullname,
-                                department=new_dept,
-                                actor_user=user
-                            )
-                            st.success(f"✅ Accessor account successfully provisioned for **{created['full_name']}** (`{created['username']}`) with role **{created['role']}**!")
-                            st.toast(f"Account '{created['username']}' provisioned successfully!")
-                            st.rerun()
-                        except Exception as ex:
-                            st.error(f"❌ Failed to provision account: {str(ex)}")
+                        valid, val_msg = validate_password_complexity(new_pw.strip())
+                        if not valid:
+                            st.error(f"❌ {val_msg}")
+                        else:
+                            try:
+                                created = create_new_user(
+                                    username=new_username,
+                                    password=new_pw,
+                                    role=new_role,
+                                    full_name=new_fullname,
+                                    department=new_dept,
+                                    actor_user=user,
+                                    must_change_password=force_mcp
+                                )
+                                st.success(f"✅ Accessor account successfully provisioned for **{created['full_name']}** (`{created['username']}`) with role **{created['role']}**!")
+                                st.toast(f"Account '{created['username']}' provisioned successfully!")
+                                st.rerun()
+                            except Exception as ex:
+                                st.error(f"❌ Failed to provision account: {str(ex)}")
 
         with col_info:
             with st.container(border=True):

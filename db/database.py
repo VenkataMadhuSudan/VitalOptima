@@ -214,11 +214,54 @@ def init_db():
         department TEXT,
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL,
-        last_login TEXT
+        last_login TEXT,
+        must_change_password INTEGER NOT NULL DEFAULT 0
     )
     """)
 
-    # Ensure default users exist in SQLite (restricted in production)
+    # Safe migration: ensure must_change_password column exists in SQLite
+    try:
+        cursor.execute("PRAGMA table_info(users)")
+        u_cols = [c[1] for c in cursor.fetchall()]
+        if "must_change_password" not in u_cols:
+            cursor.execute("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0")
+    except Exception:
+        pass
+
+    # --- 1b. Persistent Login Attempts (Brute-Force & Rate Limiting) ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS login_attempts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        identifier TEXT NOT NULL,
+        attempt_type TEXT NOT NULL,
+        attempt_time REAL NOT NULL,
+        success INTEGER NOT NULL DEFAULT 0,
+        ip_address TEXT
+    )
+    """)
+    cursor.execute("""
+    CREATE INDEX IF NOT EXISTS idx_login_attempts_lookup 
+    ON login_attempts (identifier, attempt_type, attempt_time);
+    """)
+
+    # --- 1c. Server-Side Active Sessions ---
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS active_sessions (
+        session_id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        created_at REAL NOT NULL,
+        last_activity_at REAL NOT NULL,
+        ip_address TEXT,
+        user_agent TEXT,
+        is_revoked INTEGER NOT NULL DEFAULT 0
+    )
+    """)
+    cursor.execute("""
+    CREATE INDEX IF NOT EXISTS idx_active_sessions_user 
+    ON active_sessions (username, is_revoked);
+    """)
+
+    # Ensure default users exist in SQLite ONLY when seed_demo is enabled (never in production)
     import os
     app_env = os.getenv("APP_ENV", "development").lower()
     seed_demo = os.getenv("SEED_DEMO_USERS", "true" if app_env != "production" else "false").lower() == "true"
@@ -233,29 +276,29 @@ def init_db():
                 h, s = hash_password(pw)
                 now_ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                 cursor.execute("""
-                    INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+                    INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at, must_change_password)
+                    VALUES (?, ?, ?, ?, ?, ?, 1, ?, 0)
                 """, (uname, h, s, role, fname, dept, now_ts))
 
-    # Sync default admin users to Postgres if available
-    try:
-        from db.postgres import get_engine
-        from sqlalchemy import text
-        engine = get_engine()
-        if engine is not None:
-            with engine.begin() as pg_conn:
-                from services.auth_service import hash_password
-                admin_hash, admin_salt = hash_password("Admin@Vital2026!")
-                officer_hash, officer_salt = hash_password("Admit@Vital2026!")
-                pg_conn.execute(text("""
-                    INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at)
-                    VALUES 
-                    ('admin', :ah, :as, 'ADMIN', 'Dr. Rajesh Sharma (Medical Director)', 'Hospital Administration', true, NOW()),
-                    ('admit_officer', :oh, :os, 'ADMISSION_OFFICER', 'Priya Nair (Lead Admission Officer)', 'Central Admissions & Triage', true, NOW())
-                    ON CONFLICT (username) DO NOTHING;
-                """), {"ah": admin_hash, "as": admin_salt, "oh": officer_hash, "os": officer_salt})
-    except Exception as e:
-        print(f"[DB] Notice syncing default users to Postgres: {e}")
+        # Sync default demo users to Postgres ONLY if seed_demo is true
+        try:
+            from db.postgres import get_engine
+            from sqlalchemy import text
+            engine = get_engine()
+            if engine is not None:
+                with engine.begin() as pg_conn:
+                    from services.auth_service import hash_password
+                    admin_hash, admin_salt = hash_password("Admin@Vital2026!")
+                    officer_hash, officer_salt = hash_password("Admit@Vital2026!")
+                    pg_conn.execute(text("""
+                        INSERT INTO users (username, password_hash, salt, role, full_name, department, is_active, created_at, must_change_password)
+                        VALUES 
+                        ('admin', :ah, :as, 'ADMIN', 'Dr. Rajesh Sharma (Medical Director)', 'Hospital Administration', true, NOW(), false),
+                        ('admit_officer', :oh, :os, 'ADMISSION_OFFICER', 'Priya Nair (Lead Admission Officer)', 'Central Admissions & Triage', true, NOW(), false)
+                        ON CONFLICT (username) DO NOTHING;
+                    """), {"ah": admin_hash, "as": admin_salt, "oh": officer_hash, "os": officer_salt})
+        except Exception as e:
+            print(f"[DB] Notice syncing default users to Postgres: {e}")
 
     # --- 2. Patient Admissions Table ---
     cursor.execute("""

@@ -207,9 +207,41 @@ class User(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_login = Column(DateTime, nullable=True)
+    must_change_password = Column(Boolean, default=False, nullable=False)
 
     def __repr__(self):
         return f"<User(username='{self.username}', role='{self.role}')>"
+
+
+class LoginAttempt(Base):
+    """Persistent tracking of authentication attempts for brute-force lockout and rate limiting."""
+    __tablename__ = "login_attempts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    identifier = Column(String(150), nullable=False, index=True)  # username or IP address
+    attempt_type = Column(String(50), nullable=False, index=True)  # 'username' or 'ip'
+    attempt_time = Column(Float, nullable=False, index=True)      # epoch timestamp
+    success = Column(Integer, nullable=False, default=0)
+    ip_address = Column(String(100), nullable=True)
+
+    def __repr__(self):
+        return f"<LoginAttempt(identifier='{self.identifier}', type='{self.attempt_type}', success={self.success})>"
+
+
+class ActiveSession(Base):
+    """Server-side session management for idle timeouts, absolute expiry, and revocation."""
+    __tablename__ = "active_sessions"
+
+    session_id = Column(String(100), primary_key=True, index=True)
+    username = Column(String(100), nullable=False, index=True)
+    created_at = Column(Float, nullable=False)       # epoch timestamp
+    last_activity_at = Column(Float, nullable=False) # epoch timestamp
+    ip_address = Column(String(100), nullable=True)
+    user_agent = Column(String(255), nullable=True)
+    is_revoked = Column(Boolean, default=False, nullable=False, index=True)
+
+    def __repr__(self):
+        return f"<ActiveSession(session_id='{self.session_id[:8]}...', user='{self.username}', revoked={self.is_revoked})>"
 
 
 class PatientAdmission(Base):
