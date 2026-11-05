@@ -147,7 +147,7 @@ class DashboardSummarizerService:
         or_slots = int(OR_AVAILABLE_SLOTS)
         or_rate = _safe_div(or_in_use, or_total, default=66.7)
 
-        # 4. Forecaster 24h Telemetry
+        # 4. Forecaster 24h Telemetry (Fast telemetry loading from persistent forecast dataset)
         peak_demand = 94
         peak_hour_str = "15:00 IST"
         avg_hourly_demand = 49.2
@@ -156,31 +156,43 @@ class DashboardSummarizerService:
         ci_upper = 103
 
         try:
-            global _CACHED_FORECASTER
-            if "_CACHED_FORECASTER" not in globals() or _CACHED_FORECASTER is None:
+            fc_path = PROJECT_ROOT / "data" / "demand_forecast.csv"
+            if fc_path.exists():
+                import pandas as pd
+                df_fc = pd.read_csv(fc_path)
+                col_name = "Predicted_Demand" if "Predicted_Demand" in df_fc.columns else ("predicted_demand" if "predicted_demand" in df_fc.columns else None)
+                if col_name:
+                    peak_demand = int(df_fc[col_name].max())
+                    peak_idx = int(df_fc[col_name].idxmax())
+                    hour_val = df_fc.iloc[peak_idx].get("Hour", "15:00")
+                    peak_hour_str = f"{hour_val} IST" if "IST" not in str(hour_val) else str(hour_val)
+                    avg_hourly_demand = round(float(df_fc[col_name].mean()), 1)
+                    total_projected_24h = int(df_fc[col_name].sum())
+                    ci_lower = int(peak_demand * 0.9)
+                    ci_upper = int(peak_demand * 1.1)
+            else:
                 from models.forecaster import DemandForecaster
-                _CACHED_FORECASTER = DemandForecaster()
-            forecaster = _CACHED_FORECASTER
-            _, f_metrics = forecaster.get_24h_forecast(surge_multiplier=1.0)
-            if f_metrics and "peak_value" in f_metrics:
-                peak_demand = int(f_metrics["peak_value"])
-                peak_hour_str = f"{f_metrics.get('peak_hour', 15)}:00 IST"
-                avg_hourly_demand = round(float(f_metrics.get("average_demand", 49.2)), 1)
-                ci_lower = int(f_metrics.get("ci_lower", peak_demand * 0.9))
-                ci_upper = int(f_metrics.get("ci_upper", peak_demand * 1.1))
+                forecaster = DemandForecaster()
+                _, f_metrics = forecaster.get_24h_forecast(surge_multiplier=1.0)
+                if f_metrics and "peak_value" in f_metrics:
+                    peak_demand = int(f_metrics["peak_value"])
+                    peak_hour_str = f"{f_metrics.get('peak_hour', 15)}:00 IST"
+                    avg_hourly_demand = round(float(f_metrics.get("average_demand", 49.2)), 1)
+                    ci_lower = int(f_metrics.get("ci_lower", peak_demand * 0.9))
+                    ci_upper = int(f_metrics.get("ci_upper", peak_demand * 1.1))
         except Exception:
             pass
 
         # 5. Inventory Telemetry
         inventory_critical_items = []
         try:
-            from db.postgres import load_inventory_supplies_dataset
             import pandas as pd
-            raw_inv = load_inventory_supplies_dataset()
-            if raw_inv.empty:
-                inv_path = PROJECT_ROOT / "data" / "inventory_supplies.csv"
-                if inv_path.exists():
-                    raw_inv = pd.read_csv(inv_path)
+            inv_path = PROJECT_ROOT / "data" / "inventory_supplies.csv"
+            if inv_path.exists():
+                raw_inv = pd.read_csv(inv_path)
+            else:
+                from db.postgres import load_inventory_supplies_dataset
+                raw_inv = load_inventory_supplies_dataset()
 
             if not raw_inv.empty and "item_name" in raw_inv.columns:
                 raw_inv["date"] = pd.to_datetime(raw_inv["date"])
@@ -672,10 +684,13 @@ class DashboardSummarizerService:
         Attempts to generate an AI explanation using configured server-side LLM credentials.
         Returns: (result_dict or None, provider_name: str)
         """
-        # Look for API keys exclusively in server-side environment variables
-        gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
-        anthropic_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
-        openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+        # Look for API keys exclusively in server-side environment variables (ignore dummy/placeholder keys)
+        def _clean_k(k):
+            val = os.getenv(k, "").strip()
+            return val if (val and not val.startswith("dummy_") and not val.startswith("your_")) else ""
+        gemini_key = _clean_k("GEMINI_API_KEY")
+        anthropic_key = _clean_k("ANTHROPIC_API_KEY")
+        openai_key = _clean_k("OPENAI_API_KEY")
 
         # Build concise operational metrics prompt containing ZERO patient PII
         system_instruction = (

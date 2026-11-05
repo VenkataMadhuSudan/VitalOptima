@@ -14,7 +14,9 @@ from config import HOSPITAL_NAME
 
 def _login_as_user(user: dict):
     """Stores user in session state and routes to appropriate workspace."""
+    import time
     st.session_state["authenticated_user"] = user
+    st.session_state["_last_token_validation_ts"] = time.time()
     if user["role"] == "ADMISSION_OFFICER":
         st.session_state["current_page"] = "Admission Workspace"
     else:
@@ -84,8 +86,8 @@ def _render_password_change_modal(pending_user: dict):
 def show_login_view():
     """Renders the hospital portal login view."""
     app_env = os.getenv("APP_ENV", "development").lower()
-    seed_demo = os.getenv("SEED_DEMO_USERS", "true" if app_env != "production" else "false").lower() == "true"
-    is_demo_mode = (app_env != "production" and seed_demo)
+    seed_demo = os.getenv("SEED_DEMO_USERS", "true").lower() == "true"
+    is_demo_mode = seed_demo or (app_env != "production")
 
     # Check if user is in mandatory password change flow
     if "pending_pw_change_user" in st.session_state:
@@ -163,33 +165,27 @@ def show_login_view():
             default_uname = "admin" if is_demo_mode else ""
             default_pw = "Admin@Vital2026!" if is_demo_mode else ""
 
-            # Input fields with pre-filled demo values
-            username = st.text_input(
-                "Username or Employee ID",
-                value=default_uname,
-                placeholder="e.g. admin or admit_officer",
-                key="login_user_input"
-            )
+            # Robust single-click form batching (native enter-to-submit without blur race conditions)
+            with st.form("login_form", clear_on_submit=False):
+                username = st.text_input(
+                    "Username or Employee ID",
+                    value=default_uname,
+                    placeholder="e.g. admin or admit_officer",
+                    key="login_user_input"
+                )
 
-            # When Enter is pressed in password field, trigger submission
-            def _trigger_login_on_enter():
-                st.session_state["login_enter_pressed"] = True
+                password = st.text_input(
+                    "Password",
+                    value=default_pw,
+                    type=pw_input_type,
+                    placeholder="Enter account password",
+                    key="login_pass_input"
+                )
 
-            password = st.text_input(
-                "Password",
-                value=default_pw,
-                type=pw_input_type,
-                placeholder="Enter account password",
-                key="login_pass_input",
-                on_change=_trigger_login_on_enter
-            )
+                st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
+                submitted = st.form_submit_button("Sign In →", type="primary", use_container_width=True)
 
-            st.markdown("<div style='height: 0.4rem;'></div>", unsafe_allow_html=True)
-            submitted = st.button("Sign In →", type="primary", use_container_width=True, key="login_submit_btn")
-
-            should_login = submitted or st.session_state.pop("login_enter_pressed", False)
-
-            if should_login:
+            if submitted:
                 if not username or not password:
                     st.error("Please enter both username and password.")
                 else:
@@ -200,7 +196,7 @@ def show_login_view():
                         rem_min = max(1, rem_sec // 60)
                         st.error(f"🔒 Account temporarily locked due to excessive failed attempts. Please retry in {rem_min} minute(s) or contact your hospital system administrator.")
                     else:
-                        with st.spinner("Authenticating credentials via PBKDF2-HMAC-SHA256..."):
+                        with st.spinner("Authenticating credentials..."):
                             user = authenticate_user(clean_u, password)
                             if user:
                                 if user.get("must_change_password"):

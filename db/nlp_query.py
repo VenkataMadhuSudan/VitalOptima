@@ -284,7 +284,9 @@ def process_natural_language_query(user_text: str, api_key: str = None):
 
     # Step 0: Try xAI Grok, OpenAI, or Google Gemini AI if API key is present
     effective_key = api_key or os.environ.get("XAI_API_KEY") or os.environ.get("GEMINI_API_KEY") or os.environ.get("OPENAI_API_KEY")
-    if effective_key and str(effective_key).strip():
+    k_clean = str(effective_key).strip() if effective_key else ""
+    is_valid_key = bool(k_clean and not k_clean.startswith("your_") and not k_clean.startswith("dummy_") and (k_clean.startswith("xai-") or k_clean.startswith("AIza") or k_clean.startswith("sk-") or api_key is not None))
+    if is_valid_key:
         gemini_result = run_gemini_nl2sql(raw_query, str(effective_key).strip())
         if gemini_result and gemini_result.get("success"):
             return gemini_result

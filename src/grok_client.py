@@ -44,7 +44,10 @@ def get_api_key(override_key: Optional[str] = None) -> Optional[str]:
 def is_grok_available(override_key: Optional[str] = None) -> bool:
     """Check if a valid Grok API key is present."""
     k = get_api_key(override_key)
-    return bool(k and len(k) > 10 and not k.startswith("your_"))
+    if not k:
+        return False
+    k = k.strip()
+    return bool(k and len(k) > 10 and not k.startswith("your_") and (k.startswith("xai-") or override_key is not None))
 
 
 def _clean_json_response(raw_text: str) -> str:

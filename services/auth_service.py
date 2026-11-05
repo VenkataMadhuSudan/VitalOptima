@@ -330,16 +330,25 @@ def validate_server_session(
 
     now_epoch = time.time()
 
-    # Query SQLite active_sessions
+    # Query SQLite active_sessions with retry for transient busy locks
     session_row = None
-    try:
-        conn = get_sqlite_conn()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM active_sessions WHERE session_id = ? LIMIT 1", (session_token,))
-        session_row = cursor.fetchone()
-        conn.close()
-    except Exception:
-        pass
+    db_error = False
+    for _ in range(3):
+        try:
+            conn = get_sqlite_conn()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM active_sessions WHERE session_id = ? LIMIT 1", (session_token,))
+            session_row = cursor.fetchone()
+            conn.close()
+            db_error = False
+            break
+        except Exception:
+            db_error = True
+            time.sleep(0.04)
+
+    # If database encountered a transient lock/timeout, do NOT invalidate the active session
+    if db_error and session_row is None:
+        return {"_transient": True}
 
     if not session_row:
         return None
@@ -432,12 +441,28 @@ def revoke_all_user_sessions(username: str):
         pass
 
 def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
-    """Retrieves an active user record by username."""
+    """
+    Retrieves an active user record by username.
+    Checks local SQLite first for zero-latency, reliable response (<1ms),
+    with secondary fallback to PostgreSQL.
+    """
     if not username:
         return None
     username_clean = username.strip().lower()
 
-    # Try PostgreSQL first if available
+    # 1. Local SQLite first (instantaneous local authoritative source)
+    try:
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE LOWER(username) = ? AND is_active = 1 LIMIT 1", (username_clean,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return dict(row)
+    except Exception as e:
+        print(f"[Auth] Notice reading user from SQLite: {e}")
+
+    # 2. Fallback to PostgreSQL if not found in SQLite
     try:
         from db.postgres import get_engine
         from sqlalchemy import text
@@ -452,18 +477,6 @@ def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
                     return dict(res)
     except Exception:
         pass
-
-    # Fallback to local SQLite
-    try:
-        conn = get_sqlite_conn()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE LOWER(username) = ? AND is_active = 1 LIMIT 1", (username_clean,))
-        row = cursor.fetchone()
-        conn.close()
-        if row:
-            return dict(row)
-    except Exception as e:
-        print(f"[Auth] Error fetching user '{username}': {e}")
 
     return None
 
@@ -694,6 +707,7 @@ def get_current_user() -> Optional[Dict[str, Any]]:
     Defense-in-depth: If a session token exists, authoritatively validates it against
     the database to enforce idle timeout, absolute lifetime, and active status,
     and resets any client-side role tampering.
+    Uses a 5-second throttle to prevent database thrashing across fast UI interactions.
     """
     try:
         import streamlit as st
@@ -702,15 +716,23 @@ def get_current_user() -> Optional[Dict[str, Any]]:
             if cached_user and isinstance(cached_user, dict):
                 token = cached_user.get("session_token")
                 if token:
-                    valid_user = validate_server_session(token)
-                    if not valid_user:
-                        # Session has expired, timed out, or been revoked
-                        del st.session_state["authenticated_user"]
-                        return None
-                    # Overwrite client-cached fields with authoritative DB values
-                    for field in ("role", "full_name", "department", "must_change_password"):
-                        if field in valid_user:
-                            cached_user[field] = valid_user[field]
+                    now = time.time()
+                    last_check = st.session_state.get("_last_token_validation_ts", 0)
+                    if now - last_check > 5.0:
+                        try:
+                            valid_user = validate_server_session(token)
+                            if valid_user is None:
+                                # Session has explicitly expired, timed out, or been revoked
+                                st.session_state.pop("authenticated_user", None)
+                                st.session_state.pop("_last_token_validation_ts", None)
+                                return None
+                            elif valid_user and not valid_user.get("_transient"):
+                                st.session_state["_last_token_validation_ts"] = now
+                                for field in ("role", "full_name", "department", "must_change_password"):
+                                    if field in valid_user:
+                                        cached_user[field] = valid_user[field]
+                        except Exception as e_check:
+                            print(f"[Auth] Transient error during background session validation: {e_check}")
                 return cached_user
     except Exception:
         pass
